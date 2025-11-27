@@ -1,0 +1,6 @@
+# Ignore local configuration overrides
+local.yaml
+*.local.yaml
+
+# Ignore production secrets
+prod.yaml
