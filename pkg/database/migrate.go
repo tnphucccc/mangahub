@@ -168,9 +168,10 @@ func (m *Migrator) loadMigrations() ([]Migration, error) {
 		}
 
 		// Set up or down SQL
-		if direction == "up" {
+		switch direction {
+		case "up":
 			migrationMap[version].UpSQL = string(content)
-		} else if direction == "down" {
+		case "down":
 			migrationMap[version].DownSQL = string(content)
 		}
 	}

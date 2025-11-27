@@ -18,7 +18,7 @@ func main() {
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"status": "ok",
+			"status":  "ok",
 			"service": "MangaHub HTTP API Server",
 		})
 	})
