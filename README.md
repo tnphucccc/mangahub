@@ -176,8 +176,25 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ### 2. TCP Progress Sync (20 points)
 - Real-time progress synchronization across devices
-- Concurrent connection handling
-- JSON-based message protocol
+- Concurrent connection handling with goroutines
+- JSON-based message protocol over TCP
+- JWT authentication for secure connections
+- Broadcast mechanism for instant updates
+
+**📖 Full TCP Documentation:** [docs/tcp-documentation.md](./docs/tcp-documentation.md)
+
+**Quick Example:**
+```bash
+# Start TCP server
+go run cmd/tcp-server/main.go
+
+# In another terminal, test with automated client
+TOKEN="your-jwt-token"
+go run test/tcp-simple/main.go $TOKEN
+
+# Or use interactive client for manual testing
+go run test/tcp-client/main.go -token $TOKEN
+```
 
 ### 3. UDP Notifications (15 points)
 - Chapter release notifications
@@ -286,6 +303,7 @@ Follow the pattern:
 ## 📚 Documentation
 
 - **[API Documentation](./docs/api-documentation.md)** - Complete REST API reference
+- **[TCP Documentation](./docs/tcp-documentation.md)** - TCP progress sync protocol
 - [Project Specification](./mangahub_project_spec.pdf)
 - [Use Case Specification](./mangahub_usecase%20(reference).pdf)
 - [CLI Manual](./mangahub_cli_manual%20(reference).pdf)

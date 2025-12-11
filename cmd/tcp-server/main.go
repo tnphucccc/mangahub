@@ -1,62 +1,55 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/tnphucccc/mangahub/internal/auth"
+	"github.com/tnphucccc/mangahub/internal/tcp"
+	"github.com/tnphucccc/mangahub/pkg/config"
 )
 
 func main() {
 	// Load configuration
-	port := getEnv("TCP_PORT", "9090")
-
-	// Start TCP listener
-	addr := fmt.Sprintf(":%s", port)
-	listener, err := net.Listen("tcp", addr)
+	configPath := getEnv("CONFIG_PATH", "./configs/dev.yaml")
+	cfg, err := config.LoadFromEnv(configPath)
 	if err != nil {
-		log.Fatalf("Failed to start TCP listener: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
-	defer listener.Close()
 
-	log.Printf("TCP Progress Sync Server listening on %s", addr)
+	log.Println("Starting TCP Progress Sync Server...")
+	log.Printf("Configuration loaded from: %s", configPath)
+
+	// Initialize JWT manager for authentication
+	jwtManager := auth.NewJWTManager(cfg.JWT.Secret, cfg.JWT.ExpiryDays)
+
+	// Create TCP server
+	server := tcp.NewServer(cfg.Server.TCPPort, jwtManager)
+
+	// Start server
+	if err := server.Start(); err != nil {
+		log.Fatalf("Failed to start TCP server: %v", err)
+	}
+
+	log.Printf("TCP Progress Sync Server started successfully")
+	log.Printf("Listening on port: %s", cfg.Server.TCPPort)
+	log.Printf("Waiting for client connections...")
+	log.Printf("Clients must authenticate with JWT token")
 
 	// Handle graceful shutdown
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	go func() {
-		<-shutdown
-		log.Println("Shutting down TCP server...")
-		listener.Close()
-		os.Exit(0)
-	}()
+	<-shutdown
+	log.Println("Shutting down TCP server...")
 
-	// Accept connections
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Printf("Failed to accept connection: %v", err)
-			continue
-		}
-
-		// Handle connection in goroutine
-		go handleConnection(conn)
+	if err := server.Stop(); err != nil {
+		log.Printf("Error stopping server: %v", err)
 	}
-}
 
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-
-	clientAddr := conn.RemoteAddr().String()
-	log.Printf("New TCP connection from %s", clientAddr)
-
-	// TODO: Implement progress sync protocol
-	// - Authenticate user
-	// - Listen for progress updates
-	// - Broadcast to other connected clients
+	log.Println("TCP server stopped")
 }
 
 func getEnv(key, defaultValue string) string {
