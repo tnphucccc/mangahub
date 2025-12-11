@@ -159,11 +159,19 @@ mangahub/
 - Library management
 - Reading progress tracking
 
-**Example:**
+**📖 Full API Documentation:** [docs/api-documentation.md](./docs/api-documentation.md)
+
+**Quick Example:**
 ```bash
+# Register a new user
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "email": "alice@example.com", "password": "alice123"}'
+
+# Login and get JWT token
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "johndoe", "password": "secret"}'
+  -d '{"username": "alice", "password": "alice123"}'
 ```
 
 ### 2. TCP Progress Sync (20 points)
@@ -277,6 +285,7 @@ Follow the pattern:
 
 ## 📚 Documentation
 
+- **[API Documentation](./docs/api-documentation.md)** - Complete REST API reference
 - [Project Specification](./mangahub_project_spec.pdf)
 - [Use Case Specification](./mangahub_usecase%20(reference).pdf)
 - [CLI Manual](./mangahub_cli_manual%20(reference).pdf)
