@@ -25,7 +25,7 @@ func main() {
 	}
 
 	// Connect to TCP server
-	addr := fmt.Sprintf("%s:%s", *host, *port)
+	addr := net.JoinHostPort(*host, *port)
 	log.Printf("Connecting to TCP server at %s...", addr)
 
 	conn, err := net.Dial("tcp", addr)

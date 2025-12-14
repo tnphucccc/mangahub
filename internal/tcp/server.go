@@ -27,7 +27,7 @@ type Client struct {
 type Server struct {
 	Port       string
 	listener   net.Listener
-	clients    map[string]*Client // clientID -> Client
+	clients    map[string]*Client   // clientID -> Client
 	userIndex  map[string][]*Client // userID -> []*Client (multiple devices per user)
 	mu         sync.RWMutex
 	broadcast  chan models.TCPProgressBroadcast
@@ -386,9 +386,9 @@ func (s *Server) GetStats() map[string]interface{} {
 	defer s.mu.RUnlock()
 
 	return map[string]interface{}{
-		"total_clients":      len(s.clients),
-		"total_users":        len(s.userIndex),
-		"broadcast_queue":    len(s.broadcast),
+		"total_clients":   len(s.clients),
+		"total_users":     len(s.userIndex),
+		"broadcast_queue": len(s.broadcast),
 	}
 }
 

@@ -89,20 +89,20 @@ func main() {
 		// Public manga routes
 		mangaRoutes := api.Group("/manga")
 		{
-			mangaRoutes.GET("", mangaHandler.Search)          // Search manga
-			mangaRoutes.GET("/all", mangaHandler.GetAll)      // Get all manga
-			mangaRoutes.GET("/:id", mangaHandler.GetByID)     // Get manga by ID
+			mangaRoutes.GET("", mangaHandler.Search)      // Search manga
+			mangaRoutes.GET("/all", mangaHandler.GetAll)  // Get all manga
+			mangaRoutes.GET("/:id", mangaHandler.GetByID) // Get manga by ID
 		}
 
 		// Protected user routes (require authentication)
 		userRoutes := api.Group("/users")
 		userRoutes.Use(middleware.AuthMiddleware(userService))
 		{
-			userRoutes.GET("/me", userHandler.GetProfile)                          // Get current user profile
-			userRoutes.GET("/library", mangaHandler.GetLibrary)                    // Get user's library
-			userRoutes.POST("/library", mangaHandler.AddToLibrary)                 // Add manga to library
-			userRoutes.GET("/progress/:manga_id", mangaHandler.GetProgress)        // Get progress for manga
-			userRoutes.PUT("/progress/:manga_id", mangaHandler.UpdateProgress)     // Update reading progress
+			userRoutes.GET("/me", userHandler.GetProfile)                      // Get current user profile
+			userRoutes.GET("/library", mangaHandler.GetLibrary)                // Get user's library
+			userRoutes.POST("/library", mangaHandler.AddToLibrary)             // Add manga to library
+			userRoutes.GET("/progress/:manga_id", mangaHandler.GetProgress)    // Get progress for manga
+			userRoutes.PUT("/progress/:manga_id", mangaHandler.UpdateProgress) // Update reading progress
 		}
 	}
 

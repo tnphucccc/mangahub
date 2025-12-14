@@ -9,11 +9,11 @@ import (
 type ReadingStatus string
 
 const (
-	ReadingStatusReading     ReadingStatus = "reading"
-	ReadingStatusCompleted   ReadingStatus = "completed"
-	ReadingStatusPlanToRead  ReadingStatus = "plan_to_read"
-	ReadingStatusOnHold      ReadingStatus = "on_hold"
-	ReadingStatusDropped     ReadingStatus = "dropped"
+	ReadingStatusReading    ReadingStatus = "reading"
+	ReadingStatusCompleted  ReadingStatus = "completed"
+	ReadingStatusPlanToRead ReadingStatus = "plan_to_read"
+	ReadingStatusOnHold     ReadingStatus = "on_hold"
+	ReadingStatusDropped    ReadingStatus = "dropped"
 )
 
 // UserProgress represents a user's reading progress for a manga
