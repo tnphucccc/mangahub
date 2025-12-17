@@ -67,9 +67,16 @@ func (r *Repository) Search(query models.MangaSearchQuery) ([]models.Manga, erro
 	args := []interface{}{}
 
 	// Add title search
-	if query.Query != "" {
-		sqlQuery += " AND (title LIKE ? OR author LIKE ?)"
-		searchTerm := "%" + query.Query + "%"
+	if query.Title != "" {
+		sqlQuery += " AND title LIKE ? "
+		searchTerm := "%" + query.Title + "%"
+		args = append(args, searchTerm, searchTerm)
+	}
+
+	// Add author search
+	if query.Author != "" {
+		sqlQuery += " AND author LIKE ? "
+		searchTerm := "%" + query.Author + "%"
 		args = append(args, searchTerm, searchTerm)
 	}
 

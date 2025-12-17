@@ -54,7 +54,8 @@ type MangaUpdateRequest struct {
 
 // MangaSearchQuery represents search parameters
 type MangaSearchQuery struct {
-	Query  string      `form:"q"`
+	Title  string      `form:"title"`
+	Author string      `form:"author"`
 	Genre  string      `form:"genre"`
 	Status MangaStatus `form:"status"`
 	Limit  int         `form:"limit"`
