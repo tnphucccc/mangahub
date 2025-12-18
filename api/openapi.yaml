@@ -1,0 +1,777 @@
+openapi: 3.0.3
+info:
+  title: MangaHub API
+  description: Manga tracking system REST API
+  version: 1.0.0
+  contact:
+    name: MangaHub Team
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+tags:
+  - name: auth
+    description: Authentication endpoints
+  - name: manga
+    description: Manga catalog endpoints
+  - name: library
+    description: User library management
+  - name: progress
+    description: Reading progress tracking
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login user
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me:
+    get:
+      tags: [auth]
+      summary: Get current user profile
+      operationId: getProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /manga:
+    get:
+      tags: [manga]
+      summary: Search manga
+      operationId: searchManga
+      parameters:
+        - name: title
+          in: query
+          schema:
+            type: string
+          description: Search by title
+        - name: author
+          in: query
+          schema:
+            type: string
+          description: Filter by author
+        - name: genre
+          in: query
+          schema:
+            type: string
+          description: Filter by genre
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/MangaStatus"
+          description: Filter by status
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MangaListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /manga/all:
+    get:
+      tags: [manga]
+      summary: Get all manga with pagination
+      operationId: getAllManga
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: All manga
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MangaListResponse"
+
+  /manga/{id}:
+    get:
+      tags: [manga]
+      summary: Get manga by ID
+      operationId: getMangaById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Manga ID
+      responses:
+        "200":
+          description: Manga details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MangaDetailResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/library:
+    get:
+      tags: [library]
+      summary: Get user's manga library
+      operationId: getLibrary
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User's library
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [library]
+      summary: Add manga to library
+      operationId: addToLibrary
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LibraryAddRequest"
+      responses:
+        "201":
+          description: Manga added to library
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/progress/{manga_id}:
+    get:
+      tags: [progress]
+      summary: Get progress for specific manga
+      operationId: getProgress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manga_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reading progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: [progress]
+      summary: Update reading progress
+      operationId: updateProgress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: manga_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressUpdateRequest"
+      responses:
+        "200":
+          description: Progress updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Number of items to return
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+      description: Number of items to skip
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    # ==========================================
+    # Base Response Structure
+    # ==========================================
+    APIResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          $ref: "#/components/schemas/APIError"
+        meta:
+          $ref: "#/components/schemas/Meta"
+
+    APIError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: "BAD_REQUEST"
+        message:
+          type: string
+          example: "Invalid request body"
+
+    Meta:
+      type: object
+      properties:
+        total:
+          type: integer
+        count:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        has_more:
+          type: boolean
+        page:
+          type: integer
+        total_pages:
+          type: integer
+
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+
+    MessageResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+
+    # ==========================================
+    # User Schemas
+    # ==========================================
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - email
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+
+    UserRegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          example: "manga_lover"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          format: password
+          example: "securepassword123"
+
+    UserLoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "manga_lover"
+        password:
+          type: string
+          format: password
+          example: "securepassword123"
+
+    AuthResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              type: object
+              required:
+                - user
+                - token
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+                token:
+                  type: string
+                  description: JWT access token
+
+    UserProfileResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+
+    # ==========================================
+    # Manga Schemas
+    # ==========================================
+    MangaStatus:
+      type: string
+      enum:
+        - ongoing
+        - completed
+        - hiatus
+        - cancelled
+
+    Manga:
+      type: object
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        genres:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: "#/components/schemas/MangaStatus"
+        total_chapters:
+          type: integer
+        description:
+          type: string
+        cover_image_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MangaListResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Manga"
+
+    MangaDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                manga:
+                  $ref: "#/components/schemas/Manga"
+
+    # ==========================================
+    # Progress & Library Schemas
+    # ==========================================
+    ReadingStatus:
+      type: string
+      enum:
+        - reading
+        - completed
+        - plan_to_read
+        - on_hold
+        - dropped
+
+    UserProgress:
+      type: object
+      required:
+        - user_id
+        - manga_id
+        - current_chapter
+        - status
+      properties:
+        user_id:
+          type: string
+        manga_id:
+          type: string
+        current_chapter:
+          type: integer
+          minimum: 0
+        status:
+          $ref: "#/components/schemas/ReadingStatus"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 10
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+
+    UserProgressWithManga:
+      allOf:
+        - $ref: "#/components/schemas/UserProgress"
+        - type: object
+          properties:
+            manga:
+              $ref: "#/components/schemas/Manga"
+
+    LibraryAddRequest:
+      type: object
+      required:
+        - manga_id
+        - status
+      properties:
+        manga_id:
+          type: string
+        status:
+          $ref: "#/components/schemas/ReadingStatus"
+        current_chapter:
+          type: integer
+          minimum: 0
+          default: 0
+
+    ProgressUpdateRequest:
+      type: object
+      required:
+        - current_chapter
+      properties:
+        current_chapter:
+          type: integer
+          minimum: 0
+        status:
+          $ref: "#/components/schemas/ReadingStatus"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 10
+
+    LibraryResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/UserProgressWithManga"
+
+    ProgressResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                progress:
+                  $ref: "#/components/schemas/UserProgress"
+
+    # ==========================================
+    # TCP/WebSocket Message Schemas
+    # ==========================================
+    TCPMessageType:
+      type: string
+      enum:
+        - auth
+        - auth_success
+        - auth_failed
+        - ping
+        - pong
+        - progress
+        - broadcast
+        - error
+
+    TCPMessage:
+      type: object
+      required:
+        - type
+        - timestamp
+      properties:
+        type:
+          $ref: "#/components/schemas/TCPMessageType"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+
+    TCPAuthMessage:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+
+    TCPAuthSuccessMessage:
+      type: object
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        message:
+          type: string
+
+    TCPAuthFailedMessage:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    TCPProgressMessage:
+      type: object
+      required:
+        - manga_id
+        - current_chapter
+      properties:
+        manga_id:
+          type: string
+        current_chapter:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ReadingStatus"
+        rating:
+          type: integer
+
+    TCPProgressBroadcast:
+      type: object
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        manga_id:
+          type: string
+        manga_title:
+          type: string
+        current_chapter:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ReadingStatus"
+        timestamp:
+          type: string
+          format: date-time
+
+    TCPErrorMessage:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    # ==========================================
+    # WebSocket Chat Schemas
+    # ==========================================
+    ChatMessageType:
+      type: string
+      enum:
+        - join
+        - leave
+        - message
+        - system
+        - error
+
+    ChatMessage:
+      type: object
+      required:
+        - type
+        - timestamp
+      properties:
+        type:
+          $ref: "#/components/schemas/ChatMessageType"
+        user_id:
+          type: string
+        username:
+          type: string
+        content:
+          type: string
+        room:
+          type: string
+        timestamp:
+          type: string
+          format: date-time

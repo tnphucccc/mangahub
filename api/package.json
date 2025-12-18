@@ -1,0 +1,21 @@
+{
+  "name": "mangahub-api-types",
+  "version": "1.0.0",
+  "description": "TypeScript types generated from MangaHub OpenAPI specification",
+  "private": true,
+  "scripts": {
+    "generate": "openapi-typescript ./openapi.yaml -o ./typescript/generated.ts",
+    "generate:watch": "openapi-typescript ./openapi.yaml -o ./typescript/generated.ts --watch",
+    "validate": "openapi-lint ./openapi.yaml",
+    "preview": "npx @redocly/cli preview-docs ./openapi.yaml"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.25.0",
+    "openapi-typescript": "^7.4.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "yarn@4.0.0"
+}
