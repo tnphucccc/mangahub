@@ -53,7 +53,12 @@ func (s *Server) GetManga(ctx context.Context, req *pb.GetMangaRequest) (*pb.Man
 // SearchManga searches for manga based on a query.
 func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
 	query := models.MangaSearchQuery{
-		// Query: req.Query,
+		Title:  req.GetTitle(),
+		Author: req.GetAuthor(),
+		Genre:  req.GetGenre(),
+		Status: models.MangaStatus(req.GetStatus()),
+		Limit:  int(req.GetLimit()),
+		Offset: int(req.GetOffset()),
 	}
 	mangas, err := s.mangaService.Search(query)
 	if err != nil {
