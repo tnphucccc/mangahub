@@ -30,15 +30,10 @@ func (r *Repository) Create(user *models.User) error {
 	return nil
 }
 
-// FindByID finds a user by ID
-func (r *Repository) FindByID(id string) (*models.User, error) {
-	query := `
-		SELECT id, username, email, password_hash, created_at, updated_at
-		FROM users
-		WHERE id = ?
-	`
+// scanUser scans a row into a User model (reduces code duplication)
+func (r *Repository) scanUser(row *sql.Row) (*models.User, error) {
 	var user models.User
-	err := r.db.QueryRow(query, id).Scan(
+	err := row.Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
@@ -50,59 +45,34 @@ func (r *Repository) FindByID(id string) (*models.User, error) {
 		return nil, fmt.Errorf("user not found")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to find user: %w", err)
+		return nil, fmt.Errorf("failed to scan user: %w", err)
 	}
 	return &user, nil
+}
+
+// findByField is a generic finder that reduces duplication for FindByID, FindByUsername, FindByEmail
+func (r *Repository) findByField(field string, value interface{}) (*models.User, error) {
+	query := fmt.Sprintf(`
+		SELECT id, username, email, password_hash, created_at, updated_at
+		FROM users
+		WHERE %s = ?
+	`, field)
+	return r.scanUser(r.db.QueryRow(query, value))
+}
+
+// FindByID finds a user by ID
+func (r *Repository) FindByID(id string) (*models.User, error) {
+	return r.findByField("id", id)
 }
 
 // FindByUsername finds a user by username
 func (r *Repository) FindByUsername(username string) (*models.User, error) {
-	query := `
-		SELECT id, username, email, password_hash, created_at, updated_at
-		FROM users
-		WHERE username = ?
-	`
-	var user models.User
-	err := r.db.QueryRow(query, username).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to find user: %w", err)
-	}
-	return &user, nil
+	return r.findByField("username", username)
 }
 
 // FindByEmail finds a user by email
 func (r *Repository) FindByEmail(email string) (*models.User, error) {
-	query := `
-		SELECT id, username, email, password_hash, created_at, updated_at
-		FROM users
-		WHERE email = ?
-	`
-	var user models.User
-	err := r.db.QueryRow(query, email).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.PasswordHash,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to find user: %w", err)
-	}
-	return &user, nil
+	return r.findByField("email", email)
 }
 
 // Exists checks if a user with given username or email already exists

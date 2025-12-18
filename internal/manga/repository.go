@@ -13,22 +13,19 @@ type Repository struct {
 	db *sql.DB
 }
 
-// NewRepository creates a new manga repository
 func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
-// FindByID finds a manga by ID
-func (r *Repository) FindByID(id string) (*models.Manga, error) {
-	query := `
-		SELECT id, title, author, genres, status, total_chapters, description, cover_image_url, created_at, updated_at
-		FROM manga
-		WHERE id = ?
-	`
+const mangaSelectFields = `id, title, author, genres, status, total_chapters, description, cover_image_url, created_at, updated_at`
+
+func scanManga(scanner interface {
+	Scan(dest ...interface{}) error
+}) (*models.Manga, error) {
 	var manga models.Manga
 	var genresJSON string
 
-	err := r.db.QueryRow(query, id).Scan(
+	err := scanner.Scan(
 		&manga.ID,
 		&manga.Title,
 		&manga.Author,
@@ -40,12 +37,8 @@ func (r *Repository) FindByID(id string) (*models.Manga, error) {
 		&manga.CreatedAt,
 		&manga.UpdatedAt,
 	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("manga not found")
-	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to find manga: %w", err)
+		return nil, err
 	}
 
 	// Unmarshal genres JSON
@@ -56,46 +49,60 @@ func (r *Repository) FindByID(id string) (*models.Manga, error) {
 	return &manga, nil
 }
 
-// Search searches for manga by query
+func (r *Repository) FindByID(id string) (*models.Manga, error) {
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM manga
+		WHERE id = ?
+	`, mangaSelectFields)
+
+	manga, err := scanManga(r.db.QueryRow(query, id))
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("manga not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to find manga: %w", err)
+	}
+
+	return manga, nil
+}
+
 func (r *Repository) Search(query models.MangaSearchQuery) ([]models.Manga, error) {
-	// Build SQL query
-	sqlQuery := `
-		SELECT id, title, author, genres, status, total_chapters, description, cover_image_url, created_at, updated_at
+	sqlQuery := fmt.Sprintf(`
+		SELECT %s
 		FROM manga
 		WHERE 1=1
-	`
+	`, mangaSelectFields)
 	args := []interface{}{}
 
-	// Add title search
+	// Add title search (case-insensitive partial match)
 	if query.Title != "" {
-		sqlQuery += " AND title LIKE ? "
-		searchTerm := "%" + query.Title + "%"
-		args = append(args, searchTerm, searchTerm)
+		sqlQuery += " AND LOWER(title) LIKE LOWER(?)"
+		args = append(args, "%"+query.Title+"%")
 	}
 
-	// Add author search
+	// Add author search (case-insensitive partial match)
 	if query.Author != "" {
-		sqlQuery += " AND author LIKE ? "
-		searchTerm := "%" + query.Author + "%"
-		args = append(args, searchTerm, searchTerm)
+		sqlQuery += " AND LOWER(author) LIKE LOWER(?)"
+		args = append(args, "%"+query.Author+"%")
 	}
 
-	// Add genre filter
+	// Add genre filter (searches within JSON array)
 	if query.Genre != "" {
-		sqlQuery += " AND genres LIKE ?"
+		sqlQuery += " AND LOWER(genres) LIKE LOWER(?)"
 		args = append(args, "%"+query.Genre+"%")
 	}
 
-	// Add status filter
+	// Add status filter (exact match)
 	if query.Status != "" {
 		sqlQuery += " AND status = ?"
 		args = append(args, query.Status)
 	}
 
-	// Add ordering
+	// Add ordering (by title alphabetically)
 	sqlQuery += " ORDER BY title ASC"
 
-	// Add pagination
+	// Add pagination with proper bounds
 	if query.Limit > 0 {
 		sqlQuery += " LIMIT ?"
 		args = append(args, query.Limit)
@@ -106,41 +113,24 @@ func (r *Repository) Search(query models.MangaSearchQuery) ([]models.Manga, erro
 		}
 	}
 
-	// Execute query
-	rows, err := r.db.Query(sqlQuery, args...)
+	return r.queryMangaList(sqlQuery, args...)
+}
+
+// queryMangaList executes a query and returns a list of manga (reduces duplication)
+func (r *Repository) queryMangaList(query string, args ...interface{}) ([]models.Manga, error) {
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search manga: %w", err)
+		return nil, fmt.Errorf("failed to query manga: %w", err)
 	}
 	defer rows.Close()
 
-	// Scan results
 	var mangaList []models.Manga
 	for rows.Next() {
-		var manga models.Manga
-		var genresJSON string
-
-		err := rows.Scan(
-			&manga.ID,
-			&manga.Title,
-			&manga.Author,
-			&genresJSON,
-			&manga.Status,
-			&manga.TotalChapters,
-			&manga.Description,
-			&manga.CoverImageURL,
-			&manga.CreatedAt,
-			&manga.UpdatedAt,
-		)
+		manga, err := scanManga(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan manga: %w", err)
 		}
-
-		// Unmarshal genres
-		if err := manga.UnmarshalGenres(genresJSON); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal genres: %w", err)
-		}
-
-		mangaList = append(mangaList, manga)
+		mangaList = append(mangaList, *manga)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -150,13 +140,13 @@ func (r *Repository) Search(query models.MangaSearchQuery) ([]models.Manga, erro
 	return mangaList, nil
 }
 
-// FindAll retrieves all manga
+// FindAll retrieves all manga with pagination
 func (r *Repository) FindAll(limit, offset int) ([]models.Manga, error) {
-	query := `
-		SELECT id, title, author, genres, status, total_chapters, description, cover_image_url, created_at, updated_at
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM manga
 		ORDER BY title ASC
-	`
+	`, mangaSelectFields)
 
 	args := []interface{}{}
 	if limit > 0 {
@@ -169,41 +159,7 @@ func (r *Repository) FindAll(limit, offset int) ([]models.Manga, error) {
 		}
 	}
 
-	rows, err := r.db.Query(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find all manga: %w", err)
-	}
-	defer rows.Close()
-
-	var mangaList []models.Manga
-	for rows.Next() {
-		var manga models.Manga
-		var genresJSON string
-
-		err := rows.Scan(
-			&manga.ID,
-			&manga.Title,
-			&manga.Author,
-			&genresJSON,
-			&manga.Status,
-			&manga.TotalChapters,
-			&manga.Description,
-			&manga.CoverImageURL,
-			&manga.CreatedAt,
-			&manga.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan manga: %w", err)
-		}
-
-		if err := manga.UnmarshalGenres(genresJSON); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal genres: %w", err)
-		}
-
-		mangaList = append(mangaList, manga)
-	}
-
-	return mangaList, rows.Err()
+	return r.queryMangaList(query, args...)
 }
 
 // GetUserLibrary retrieves a user's manga library with progress
