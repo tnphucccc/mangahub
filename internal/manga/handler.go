@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/tnphucccc/mangahub/pkg/models"
+	"github.com/tnphucccc/mangahub/pkg/response"
 )
 
 // Handler handles manga HTTP requests
@@ -25,24 +26,22 @@ func (h *Handler) Search(c *gin.Context) {
 
 	// Bind query parameters
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid query parameters",
-		})
+		response.BadRequest(c, "Invalid query parameters")
 		return
 	}
 
 	// Search manga
 	mangaList, err := h.service.Search(query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to search manga",
-		})
+		response.InternalError(c, "Failed to search manga")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"manga": mangaList,
-		"count": len(mangaList),
+	// Use pagination response for consistency
+	response.SuccessWithMeta(c, http.StatusOK, gin.H{"items": mangaList}, &response.Meta{
+		Count:  len(mangaList),
+		Limit:  query.Limit,
+		Offset: query.Offset,
 	})
 }
 
@@ -53,15 +52,11 @@ func (h *Handler) GetByID(c *gin.Context) {
 
 	manga, err := h.service.GetByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Manga not found",
-		})
+		response.NotFound(c, "Manga not found")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"manga": manga,
-	})
+	response.Success(c, http.StatusOK, gin.H{"manga": manga})
 }
 
 // GetAll retrieves all manga with pagination
@@ -72,15 +67,14 @@ func (h *Handler) GetAll(c *gin.Context) {
 
 	mangaList, err := h.service.GetAll(limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get manga",
-		})
+		response.InternalError(c, "Failed to get manga")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"manga": mangaList,
-		"count": len(mangaList),
+	response.SuccessWithMeta(c, http.StatusOK, gin.H{"items": mangaList}, &response.Meta{
+		Count:  len(mangaList),
+		Limit:  limit,
+		Offset: offset,
 	})
 }
 
@@ -90,9 +84,7 @@ func (h *Handler) GetLibrary(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userInterface, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+		response.Unauthorized(c, "Unauthorized")
 		return
 	}
 
@@ -100,15 +92,12 @@ func (h *Handler) GetLibrary(c *gin.Context) {
 
 	library, err := h.service.GetUserLibrary(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get library",
-		})
+		response.InternalError(c, "Failed to get library")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"library": library,
-		"count":   len(library),
+	response.SuccessWithMeta(c, http.StatusOK, gin.H{"items": library}, &response.Meta{
+		Count: len(library),
 	})
 }
 
@@ -118,9 +107,7 @@ func (h *Handler) AddToLibrary(c *gin.Context) {
 	// Get user ID from context
 	userInterface, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+		response.Unauthorized(c, "Unauthorized")
 		return
 	}
 
@@ -128,29 +115,21 @@ func (h *Handler) AddToLibrary(c *gin.Context) {
 
 	var req models.LibraryAddRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		response.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	if err := h.service.AddToLibrary(user.ID, req); err != nil {
 		if err.Error() == "manga not found" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Manga not found",
-			})
+			response.NotFound(c, "Manga not found")
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to add manga to library",
-		})
+		response.InternalError(c, "Failed to add manga to library")
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Manga added to library",
-	})
+	response.Success(c, http.StatusCreated, gin.H{"message": "Manga added to library"})
 }
 
 // UpdateProgress updates user's reading progress
@@ -159,9 +138,7 @@ func (h *Handler) UpdateProgress(c *gin.Context) {
 	// Get user ID from context
 	userInterface, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+		response.Unauthorized(c, "Unauthorized")
 		return
 	}
 
@@ -170,43 +147,31 @@ func (h *Handler) UpdateProgress(c *gin.Context) {
 
 	var req models.ProgressUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		response.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	if err := h.service.UpdateProgress(user.ID, mangaID, req); err != nil {
 		if err.Error() == "manga not found" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Manga not found",
-			})
+			response.NotFound(c, "Manga not found")
 			return
 		}
 
 		if err.Error() == "progress not found" || err.Error() == "manga not in user's library" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Manga not in library",
-			})
+			response.NotFound(c, "Manga not in library")
 			return
 		}
 
 		if err.Error() == "invalid chapter number" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid chapter number",
-			})
+			response.BadRequest(c, "Invalid chapter number")
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update progress",
-		})
+		response.InternalError(c, "Failed to update progress")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Progress updated",
-	})
+	response.Success(c, http.StatusOK, gin.H{"message": "Progress updated"})
 }
 
 // GetProgress retrieves user's progress for a specific manga
@@ -215,9 +180,7 @@ func (h *Handler) GetProgress(c *gin.Context) {
 	// Get user ID from context
 	userInterface, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+		response.Unauthorized(c, "Unauthorized")
 		return
 	}
 
@@ -226,13 +189,9 @@ func (h *Handler) GetProgress(c *gin.Context) {
 
 	progress, err := h.service.GetProgress(user.ID, mangaID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Progress not found",
-		})
+		response.NotFound(c, "Progress not found")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"progress": progress,
-	})
+	response.Success(c, http.StatusOK, gin.H{"progress": progress})
 }

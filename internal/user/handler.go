@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/tnphucccc/mangahub/pkg/models"
+	"github.com/tnphucccc/mangahub/pkg/response"
 )
 
 // Handler handles user HTTP requests
@@ -24,9 +25,7 @@ func (h *Handler) Register(c *gin.Context) {
 
 	// Bind JSON request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		response.BadRequest(c, "Invalid request body")
 		return
 	}
 
@@ -35,20 +34,16 @@ func (h *Handler) Register(c *gin.Context) {
 	if err != nil {
 		// Check for duplicate user
 		if err.Error() == "username or email already exists" {
-			c.JSON(http.StatusConflict, gin.H{
-				"error": err.Error(),
-			})
+			response.Conflict(c, err.Error())
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to register user",
-		})
+		response.InternalError(c, "Failed to register user")
 		return
 	}
 
 	// Return user and token
-	c.JSON(http.StatusCreated, gin.H{
+	response.Success(c, http.StatusCreated, gin.H{
 		"user":  user.ToResponse(),
 		"token": token,
 	})
@@ -61,23 +56,19 @@ func (h *Handler) Login(c *gin.Context) {
 
 	// Bind JSON request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		response.BadRequest(c, "Invalid request body")
 		return
 	}
 
 	// Login user
 	user, token, err := h.service.Login(req)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid username or password",
-		})
+		response.Unauthorized(c, "Invalid username or password")
 		return
 	}
 
 	// Return user and token
-	c.JSON(http.StatusOK, gin.H{
+	response.Success(c, http.StatusOK, gin.H{
 		"user":  user.ToResponse(),
 		"token": token,
 	})
@@ -89,14 +80,12 @@ func (h *Handler) GetProfile(c *gin.Context) {
 	// Get user from context (set by auth middleware)
 	userInterface, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+		response.Unauthorized(c, "Unauthorized")
 		return
 	}
 
 	user := userInterface.(*models.User)
-	c.JSON(http.StatusOK, gin.H{
+	response.Success(c, http.StatusOK, gin.H{
 		"user": user.ToResponse(),
 	})
 }
