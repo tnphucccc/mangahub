@@ -70,7 +70,7 @@ type MangaResponse struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Author        string                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
-	Genres        []string               `protobuf:"bytes,4,rep,name=genres,proto3" json:"genres,omitempty"` // Use repeated for slices/arrays
+	Genres        []string               `protobuf:"bytes,4,rep,name=genres,proto3" json:"genres,omitempty"`
 	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	TotalChapters int32                  `protobuf:"varint,6,opt,name=total_chapters,json=totalChapters,proto3" json:"total_chapters,omitempty"`
 	Description   string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
@@ -259,7 +259,7 @@ func (x *SearchRequest) GetOffset() int32 {
 
 type SearchResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Manga         []*MangaResponse       `protobuf:"bytes,1,rep,name=manga,proto3" json:"manga,omitempty"` // A list of MangaResponse messages
+	Manga         []*MangaResponse       `protobuf:"bytes,1,rep,name=manga,proto3" json:"manga,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -301,6 +301,226 @@ func (x *SearchResponse) GetManga() []*MangaResponse {
 	return nil
 }
 
+type UserProgress struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserId         string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	MangaId        string                 `protobuf:"bytes,2,opt,name=manga_id,json=mangaId,proto3" json:"manga_id,omitempty"`
+	CurrentChapter int32                  `protobuf:"varint,3,opt,name=current_chapter,json=currentChapter,proto3" json:"current_chapter,omitempty"`
+	Status         string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	Rating         int32                  `protobuf:"varint,5,opt,name=rating,proto3" json:"rating,omitempty"`
+	StartedAt      string                 `protobuf:"bytes,6,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	CompletedAt    string                 `protobuf:"bytes,7,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	UpdatedAt      string                 `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *UserProgress) Reset() {
+	*x = UserProgress{}
+	mi := &file_manga_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserProgress) ProtoMessage() {}
+
+func (x *UserProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_manga_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserProgress.ProtoReflect.Descriptor instead.
+func (*UserProgress) Descriptor() ([]byte, []int) {
+	return file_manga_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UserProgress) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UserProgress) GetMangaId() string {
+	if x != nil {
+		return x.MangaId
+	}
+	return ""
+}
+
+func (x *UserProgress) GetCurrentChapter() int32 {
+	if x != nil {
+		return x.CurrentChapter
+	}
+	return 0
+}
+
+func (x *UserProgress) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *UserProgress) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *UserProgress) GetStartedAt() string {
+	if x != nil {
+		return x.StartedAt
+	}
+	return ""
+}
+
+func (x *UserProgress) GetCompletedAt() string {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return ""
+}
+
+func (x *UserProgress) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type UpdateProgressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	MangaId       string                 `protobuf:"bytes,2,opt,name=manga_id,json=mangaId,proto3" json:"manga_id,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Chapter       int32                  `protobuf:"varint,4,opt,name=chapter,proto3" json:"chapter,omitempty"`
+	Rating        int32                  `protobuf:"varint,5,opt,name=rating,proto3" json:"rating,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProgressRequest) Reset() {
+	*x = UpdateProgressRequest{}
+	mi := &file_manga_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProgressRequest) ProtoMessage() {}
+
+func (x *UpdateProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_manga_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProgressRequest.ProtoReflect.Descriptor instead.
+func (*UpdateProgressRequest) Descriptor() ([]byte, []int) {
+	return file_manga_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UpdateProgressRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UpdateProgressRequest) GetMangaId() string {
+	if x != nil {
+		return x.MangaId
+	}
+	return ""
+}
+
+func (x *UpdateProgressRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *UpdateProgressRequest) GetChapter() int32 {
+	if x != nil {
+		return x.Chapter
+	}
+	return 0
+}
+
+func (x *UpdateProgressRequest) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+type UpdateProgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Progress      *UserProgress          `protobuf:"bytes,1,opt,name=progress,proto3" json:"progress,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProgressResponse) Reset() {
+	*x = UpdateProgressResponse{}
+	mi := &file_manga_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProgressResponse) ProtoMessage() {}
+
+func (x *UpdateProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_manga_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProgressResponse.ProtoReflect.Descriptor instead.
+func (*UpdateProgressResponse) Descriptor() ([]byte, []int) {
+	return file_manga_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UpdateProgressResponse) GetProgress() *UserProgress {
+	if x != nil {
+		return x.Progress
+	}
+	return nil
+}
+
 var File_manga_proto protoreflect.FileDescriptor
 
 const file_manga_proto_rawDesc = "" +
@@ -326,10 +546,30 @@ const file_manga_proto_rawDesc = "" +
 	"\x05limit\x18\x06 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\a \x01(\x05R\x06offset\"<\n" +
 	"\x0eSearchResponse\x12*\n" +
-	"\x05manga\x18\x01 \x03(\v2\x14.manga.MangaResponseR\x05manga2\x84\x01\n" +
+	"\x05manga\x18\x01 \x03(\v2\x14.manga.MangaResponseR\x05manga\"\xfc\x01\n" +
+	"\fUserProgress\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
+	"\bmanga_id\x18\x02 \x01(\tR\amangaId\x12'\n" +
+	"\x0fcurrent_chapter\x18\x03 \x01(\x05R\x0ecurrentChapter\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12\x16\n" +
+	"\x06rating\x18\x05 \x01(\x05R\x06rating\x12\x1d\n" +
+	"\n" +
+	"started_at\x18\x06 \x01(\tR\tstartedAt\x12!\n" +
+	"\fcompleted_at\x18\a \x01(\tR\vcompletedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\b \x01(\tR\tupdatedAt\"\x95\x01\n" +
+	"\x15UpdateProgressRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
+	"\bmanga_id\x18\x02 \x01(\tR\amangaId\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x18\n" +
+	"\achapter\x18\x04 \x01(\x05R\achapter\x12\x16\n" +
+	"\x06rating\x18\x05 \x01(\x05R\x06rating\"I\n" +
+	"\x16UpdateProgressResponse\x12/\n" +
+	"\bprogress\x18\x01 \x01(\v2\x13.manga.UserProgressR\bprogress2\xd3\x01\n" +
 	"\fMangaService\x128\n" +
 	"\bGetManga\x12\x16.manga.GetMangaRequest\x1a\x14.manga.MangaResponse\x12:\n" +
-	"\vSearchManga\x12\x14.manga.SearchRequest\x1a\x15.manga.SearchResponseB\x1bZ\x19mangahub/internal/grpc/pbb\x06proto3"
+	"\vSearchManga\x12\x14.manga.SearchRequest\x1a\x15.manga.SearchResponse\x12M\n" +
+	"\x0eUpdateProgress\x12\x1c.manga.UpdateProgressRequest\x1a\x1d.manga.UpdateProgressResponseB\x1bZ\x19mangahub/internal/grpc/pbb\x06proto3"
 
 var (
 	file_manga_proto_rawDescOnce sync.Once
@@ -343,24 +583,30 @@ func file_manga_proto_rawDescGZIP() []byte {
 	return file_manga_proto_rawDescData
 }
 
-var file_manga_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_manga_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_manga_proto_goTypes = []any{
-	(*GetMangaRequest)(nil), // 0: manga.GetMangaRequest
-	(*MangaResponse)(nil),   // 1: manga.MangaResponse
-	(*SearchRequest)(nil),   // 2: manga.SearchRequest
-	(*SearchResponse)(nil),  // 3: manga.SearchResponse
+	(*GetMangaRequest)(nil),        // 0: manga.GetMangaRequest
+	(*MangaResponse)(nil),          // 1: manga.MangaResponse
+	(*SearchRequest)(nil),          // 2: manga.SearchRequest
+	(*SearchResponse)(nil),         // 3: manga.SearchResponse
+	(*UserProgress)(nil),           // 4: manga.UserProgress
+	(*UpdateProgressRequest)(nil),  // 5: manga.UpdateProgressRequest
+	(*UpdateProgressResponse)(nil), // 6: manga.UpdateProgressResponse
 }
 var file_manga_proto_depIdxs = []int32{
 	1, // 0: manga.SearchResponse.manga:type_name -> manga.MangaResponse
-	0, // 1: manga.MangaService.GetManga:input_type -> manga.GetMangaRequest
-	2, // 2: manga.MangaService.SearchManga:input_type -> manga.SearchRequest
-	1, // 3: manga.MangaService.GetManga:output_type -> manga.MangaResponse
-	3, // 4: manga.MangaService.SearchManga:output_type -> manga.SearchResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 1: manga.UpdateProgressResponse.progress:type_name -> manga.UserProgress
+	0, // 2: manga.MangaService.GetManga:input_type -> manga.GetMangaRequest
+	2, // 3: manga.MangaService.SearchManga:input_type -> manga.SearchRequest
+	5, // 4: manga.MangaService.UpdateProgress:input_type -> manga.UpdateProgressRequest
+	1, // 5: manga.MangaService.GetManga:output_type -> manga.MangaResponse
+	3, // 6: manga.MangaService.SearchManga:output_type -> manga.SearchResponse
+	6, // 7: manga.MangaService.UpdateProgress:output_type -> manga.UpdateProgressResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_manga_proto_init() }
@@ -374,7 +620,7 @@ func file_manga_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_manga_proto_rawDesc), len(file_manga_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

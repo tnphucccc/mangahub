@@ -81,3 +81,17 @@ func (p *UserProgress) GetCompletedAtValue() time.Time {
 	}
 	return time.Time{}
 }
+
+// GetProgress retrieves user's progress for a specific manga
+func (p *UserProgress) GetProgress(userID, mangaID string) (*UserProgress, error) {
+	return &UserProgress{
+		UserID:         userID,
+		MangaID:        mangaID,
+		CurrentChapter: p.CurrentChapter,
+		Status:         p.Status,
+		Rating:         p.Rating,
+		StartedAt:      p.StartedAt,
+		CompletedAt:    p.CompletedAt,
+		UpdatedAt:      p.UpdatedAt,
+	}, nil
+}

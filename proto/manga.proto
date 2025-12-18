@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package manga;
+
 option go_package = "mangahub/internal/grpc/pb";
 
 message GetMangaRequest {
@@ -8,31 +9,55 @@ message GetMangaRequest {
 }
 
 message MangaResponse {
-    string id = 1;
-    string title = 2;
-    string author = 3;
-    repeated string genres = 4; // Use repeated for slices/arrays
-    string status = 5;
-    int32 total_chapters = 6;
-    string description = 7;
-    string cover_url = 8;
+    string        id             = 1;
+    string        title          = 2;
+    string        author         = 3;
+    repeated string genres       = 4;
+    string        status         = 5;
+    int32         total_chapters = 6;
+    string        description    = 7;
+    string        cover_url      = 8;
 }
 
 message SearchRequest {
-    string title = 1;
-    string author = 2;
-    string genre = 3;
-    string status = 4;
+    string title    = 1;
+    string author   = 2;
+    string genre    = 3;
+    string status   = 4;
     string order_by = 5;
-    int32 limit = 6;
-    int32 offset = 7; 
+    int32  limit    = 6;
+    int32  offset   = 7;
 }
 
 message SearchResponse {
-    repeated MangaResponse manga = 1; // A list of MangaResponse messages
+    repeated MangaResponse manga = 1;
+}
+
+message UserProgress {
+    string user_id         = 1;
+    string manga_id        = 2;
+    int32  current_chapter = 3;
+    string status          = 4;
+    int32  rating          = 5;
+    string started_at      = 6;
+    string completed_at    = 7;
+    string updated_at      = 8;
+}
+
+message UpdateProgressRequest {
+    string user_id  = 1;
+    string manga_id = 2;
+    string status   = 3;
+    int32  chapter  = 4;
+    int32  rating   = 5;
+}
+
+message UpdateProgressResponse {
+    UserProgress progress = 1;
 }
 
 service MangaService {
     rpc GetManga(GetMangaRequest) returns (MangaResponse);
     rpc SearchManga(SearchRequest) returns (SearchResponse);
+    rpc UpdateProgress(UpdateProgressRequest) returns (UpdateProgressResponse);
 }

@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/tnphucccc/mangahub/internal/grpc/pb"
 	"github.com/tnphucccc/mangahub/internal/manga"
@@ -71,4 +72,41 @@ func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 	}
 
 	return &pb.SearchResponse{Manga: mangaResponses}, nil
+}
+
+// UpdateProgress updates the user's reading progress for a manga.
+func (s *Server) UpdateProgress(ctx context.Context, req *pb.UpdateProgressRequest) (*pb.UpdateProgressResponse, error) {
+	statusVal := models.ReadingStatus(req.GetStatus())
+	ratingVal := int(req.GetRating())
+
+	request := models.ProgressUpdateRequest{
+		Status:         &statusVal,
+		Rating:         &ratingVal,
+		CurrentChapter: int(req.GetChapter()),
+	}
+
+	err := s.mangaService.UpdateProgress(req.GetUserId(), req.GetMangaId(), request)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to update progress: %v", err)
+	}
+
+	progress, err := s.mangaService.GetProgress(req.GetUserId(), req.GetMangaId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to retrieve updated progress: %v", err)
+	}
+
+	progressResponse := &pb.UserProgress{
+		UserId:         progress.UserID,
+		MangaId:        progress.MangaID,
+		CurrentChapter: int32(progress.CurrentChapter),
+		Status:         string(progress.Status),
+		Rating:         int32(progress.GetRatingValue()),
+		StartedAt:      strconv.FormatInt(progress.GetStartedAtValue().Unix(), 10),
+		CompletedAt:    strconv.FormatInt(progress.GetCompletedAtValue().Unix(), 10),
+		UpdatedAt:      strconv.FormatInt(progress.UpdatedAt.Unix(), 10),
+	}
+
+	return &pb.UpdateProgressResponse{
+		Progress: progressResponse,
+	}, nil
 }
