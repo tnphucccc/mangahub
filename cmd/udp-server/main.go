@@ -7,11 +7,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/tnphucccc/mangahub/pkg/utils"
 )
 
 func main() {
 	// Load configuration
-	port := getEnv("UDP_PORT", "9091")
+	port := utils.GetEnv("UDP_PORT", "9091")
 
 	// Start UDP listener
 	addr := fmt.Sprintf(":%s", port)
@@ -62,11 +64,4 @@ func handleMessage(conn *net.UDPConn, addr *net.UDPAddr, data []byte) {
 	// - Register client for notifications
 	// - Broadcast chapter release notifications
 	// - Handle client unregistration
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }

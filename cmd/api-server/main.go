@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tnphucccc/mangahub/internal/auth"
@@ -11,11 +10,12 @@ import (
 	"github.com/tnphucccc/mangahub/internal/user"
 	"github.com/tnphucccc/mangahub/pkg/config"
 	"github.com/tnphucccc/mangahub/pkg/database"
+	"github.com/tnphucccc/mangahub/pkg/utils"
 )
 
 func main() {
 	// Load configuration
-	configPath := getEnv("CONFIG_PATH", "./configs/dev.yaml")
+	configPath := utils.GetEnv("CONFIG_PATH", "./configs/dev.yaml")
 	cfg, err := config.LoadFromEnv(configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -123,11 +123,4 @@ func main() {
 	if err := router.Run(addr); err != nil {
 		log.Fatalf("Failed to start HTTP server: %v", err)
 	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }

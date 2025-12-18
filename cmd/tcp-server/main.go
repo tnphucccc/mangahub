@@ -9,11 +9,12 @@ import (
 	"github.com/tnphucccc/mangahub/internal/auth"
 	"github.com/tnphucccc/mangahub/internal/tcp"
 	"github.com/tnphucccc/mangahub/pkg/config"
+	"github.com/tnphucccc/mangahub/pkg/utils"
 )
 
 func main() {
 	// Load configuration
-	configPath := getEnv("CONFIG_PATH", "./configs/dev.yaml")
+	configPath := utils.GetEnv("CONFIG_PATH", "./configs/dev.yaml")
 	cfg, err := config.LoadFromEnv(configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -50,11 +51,4 @@ func main() {
 	}
 
 	log.Println("TCP server stopped")
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
