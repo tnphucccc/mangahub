@@ -1,0 +1,43 @@
+# --- Dependencies ---
+# Ignore the heavy library files
+node_modules/
+.pnp
+.pnp.js
+.yarn-integrity
+
+# --- Yarn Modern (v2+) ---
+# We ignore the cache but KEEP the releases/plugins so Yarn works for others
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# --- Next.js Build Output ---
+# These are local build artifacts
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# --- Environment Variables (Security) ---
+# We block all local env files to prevent leaking API keys
+.env*.local
+.env
+# Optional: If you want to keep a template for others, uncomment the line below:
+# .env.example
+
+# --- Debug & Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+coverage/
+
+# --- OS / IDE Files ---
+.DS_Store
+*.pem
+.vscode/
+.idea/
+.vercel
