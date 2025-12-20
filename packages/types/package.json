@@ -1,0 +1,34 @@
+{
+  "name": "@mangahub/types",
+  "version": "1.0.0",
+  "description": "TypeScript types generated from MangaHub OpenAPI specification",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "generate": "openapi-typescript ../spec/openapi.yaml -o src/generated.ts && node scripts/generate-index.js",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mangahub/spec": "workspace:*"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.0",
+    "typescript": "^5.9.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@mangahub/spec",
+  "version": "1.0.0",
+  "description": "MangaHub OpenAPI specification and documentation",
+  "private": true,
+  "main": "openapi.yaml",
+  "scripts": {
+    "validate": "redocly lint openapi.yaml",
+    "preview": "redocly preview-docs openapi.yaml",
+    "build": "redocly bundle openapi.yaml --output dist/openapi.yaml",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.25.0"
+  },
+  "files": [
+    "openapi.yaml",
+    "README.md",
+    "QUICKSTART.md",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
