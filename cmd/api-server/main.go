@@ -114,7 +114,7 @@ func main() {
 	log.Printf("  - Health check: GET /health")
 	log.Printf("  - Register: POST /api/v1/auth/register")
 	log.Printf("  - Login: POST /api/v1/auth/login")
-	log.Printf("  - Search manga: GET /api/v1/manga?q=query")
+	log.Printf("  - Search manga: GET /api/v1/manga?title=<title>&author=<author>&genre=<genre>&status=<status>")
 	log.Printf("  - Get manga: GET /api/v1/manga/:id")
 	log.Printf("  - User library: GET /api/v1/users/library (protected)")
 	log.Printf("  - Add to library: POST /api/v1/users/library (protected)")

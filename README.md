@@ -44,17 +44,20 @@ MangaHub
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/tnphucccc/mangahub.git
    cd mangahub
    ```
 
 2. **Install dependencies**
+
    ```bash
    go mod download
    ```
 
 3. **Run database migrations**
+
    ```bash
    make migrate-up
    ```
@@ -154,6 +157,7 @@ mangahub/
 ## 🔌 Network Protocols
 
 ### 1. HTTP REST API (25 points)
+
 - User registration and authentication (JWT)
 - Manga search and CRUD operations
 - Library management
@@ -162,6 +166,7 @@ mangahub/
 **📖 Full API Documentation:** [docs/api-documentation.md](./docs/api-documentation.md)
 
 **Quick Example:**
+
 ```bash
 # Register a new user
 curl -X POST http://localhost:8080/api/v1/auth/register \
@@ -175,6 +180,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 ```
 
 ### 2. TCP Progress Sync (20 points)
+
 - Real-time progress synchronization across devices
 - Concurrent connection handling with goroutines
 - JSON-based message protocol over TCP
@@ -184,6 +190,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 **📖 Full TCP Documentation:** [docs/tcp-documentation.md](./docs/tcp-documentation.md)
 
 **Quick Example:**
+
 ```bash
 # Start TCP server
 go run cmd/tcp-server/main.go
@@ -197,19 +204,39 @@ go run test/tcp-client/main.go -token $TOKEN
 ```
 
 ### 3. UDP Notifications (15 points)
+
 - Chapter release notifications
 - Client registration mechanism
 - Broadcast to multiple clients
 
 ### 4. WebSocket Chat (15 points)
+
 - Real-time manga discussions
 - User join/leave notifications
 - Message broadcasting
 
 ### 5. gRPC Internal Service (10 points)
+
 - Internal service-to-service communication
 - Protocol Buffer definitions
-- Unary RPC calls
+- Unary RPC calls for manga retrieval and progress updates
+
+**📖 Full gRPC Documentation:** [docs/grpc-documentation.md](./docs/grpc-documentation.md)
+
+**Quick Example:**
+
+```bash
+# Install grpcurl for testing
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+
+# Get manga by ID
+grpcurl -plaintext -d '{"manga_id": "manga-001"}' \
+  localhost:9092 manga.MangaService/GetManga
+
+# Search by title
+grpcurl -plaintext -d '{"title": "naruto", "limit": 10}' \
+  localhost:9092 manga.MangaService/SearchManga
+```
 
 ---
 
@@ -290,6 +317,7 @@ make clean          # Clean build artifacts
 ### Adding a New Feature
 
 Follow the pattern:
+
 1. Create model in `pkg/models/`
 2. Create migration in `migrations/`
 3. Create repository in `internal/<feature>/repository.go`
@@ -304,9 +332,10 @@ Follow the pattern:
 
 - **[API Documentation](./docs/api-documentation.md)** - Complete REST API reference
 - **[TCP Documentation](./docs/tcp-documentation.md)** - TCP progress sync protocol
+- **[gRPC Documentation](./docs/grpc-documentation.md)** - gRPC service reference
 - [Project Specification](./mangahub_project_spec.pdf)
-- [Use Case Specification](./mangahub_usecase%20(reference).pdf)
-- [CLI Manual](./mangahub_cli_manual%20(reference).pdf)
+- [Use Case Specification](<./mangahub_usecase%20(reference).pdf>)
+- [CLI Manual](<./mangahub_cli_manual%20(reference).pdf>)
 - [CLAUDE.md](./CLAUDE.md) - AI assistant context
 
 ---
@@ -316,6 +345,7 @@ Follow the pattern:
 ### Grading Criteria (100 points)
 
 - **Core Protocol Implementation (40 pts)**
+
   - HTTP REST API: 15 pts
   - TCP Progress Sync: 13 pts
   - UDP Notifications: 18 pts
@@ -323,17 +353,20 @@ Follow the pattern:
   - gRPC Service: 7 pts
 
 - **System Integration (20 pts)**
+
   - Database Integration: 8 pts
   - Service Communication: 7 pts
   - Error Handling: 3 pts
   - Code Organization: 2 pts
 
 - **Code Quality (10 pts)**
+
   - Go Idioms: 5 pts
   - Testing: 3 pts
   - Documentation: 2 pts
 
 - **Documentation & Demo (10 pts)**
+
   - Technical Documentation: 5 pts
   - Live Demonstration: 5 pts
 

@@ -20,7 +20,7 @@ func NewHandler(service *Service) *Handler {
 }
 
 // Search searches for manga
-// GET /manga?q=query&genre=action&status=ongoing&limit=20&offset=0
+// GET /manga?title=<title>&author=<author>&genre=<genre>&status=<status>&limit=20&offset=0
 func (h *Handler) Search(c *gin.Context) {
 	var query models.MangaSearchQuery
 

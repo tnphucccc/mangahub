@@ -3,6 +3,7 @@
 Complete REST API documentation for the MangaHub HTTP server.
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Authentication](#authentication)
 - [Authentication Endpoints](#authentication-endpoints)
@@ -17,12 +18,15 @@ Complete REST API documentation for the MangaHub HTTP server.
 ## Overview
 
 ### Base URL
+
 ```
 http://localhost:8080/api/v1
 ```
 
 ### Content Type
+
 All requests and responses use JSON format:
+
 ```
 Content-Type: application/json
 ```
@@ -30,6 +34,7 @@ Content-Type: application/json
 ### Authentication
 
 Protected endpoints require a JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your-jwt-token>
 ```
@@ -45,11 +50,13 @@ Tokens are valid for 7 days by default and are obtained through the login or reg
 Create a new user account and receive a JWT token.
 
 **Endpoint:**
+
 ```http
 POST /api/v1/auth/register
 ```
 
 **Request Body:**
+
 ```json
 {
   "username": "johndoe",
@@ -59,11 +66,13 @@ POST /api/v1/auth/register
 ```
 
 **Validation Rules:**
+
 - `username`: required, 3-32 characters
 - `email`: required, valid email format
 - `password`: required, minimum 6 characters
 
 **Success Response (201 Created):**
+
 ```json
 {
   "user": {
@@ -79,6 +88,7 @@ POST /api/v1/auth/register
 **Error Responses:**
 
 `400 Bad Request` - Invalid request body or validation failed:
+
 ```json
 {
   "error": "Invalid request body"
@@ -86,6 +96,7 @@ POST /api/v1/auth/register
 ```
 
 `409 Conflict` - Username or email already exists:
+
 ```json
 {
   "error": "username or email already exists"
@@ -93,6 +104,7 @@ POST /api/v1/auth/register
 ```
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -110,11 +122,13 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 Authenticate an existing user and receive a JWT token.
 
 **Endpoint:**
+
 ```http
 POST /api/v1/auth/login
 ```
 
 **Request Body:**
+
 ```json
 {
   "username": "johndoe",
@@ -123,6 +137,7 @@ POST /api/v1/auth/login
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "user": {
@@ -138,6 +153,7 @@ POST /api/v1/auth/login
 **Error Responses:**
 
 `400 Bad Request` - Invalid request body:
+
 ```json
 {
   "error": "Invalid request body"
@@ -145,6 +161,7 @@ POST /api/v1/auth/login
 ```
 
 `401 Unauthorized` - Invalid credentials:
+
 ```json
 {
   "error": "Invalid username or password"
@@ -152,6 +169,7 @@ POST /api/v1/auth/login
 ```
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -170,21 +188,24 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 Search for manga by title, author, genre, or status with pagination support.
 
 **Endpoint:**
+
 ```http
 GET /api/v1/manga
 ```
 
 **Query Parameters:**
 
-| Parameter | Type | Required | Description | Default |
-|-----------|------|----------|-------------|---------|
-| `q` | string | No | Search term for title or author | - |
-| `genre` | string | No | Filter by genre | - |
-| `status` | string | No | Filter by status (`ongoing`, `completed`, `hiatus`, `cancelled`) | - |
-| `limit` | integer | No | Number of results (max: 100) | 20 |
-| `offset` | integer | No | Pagination offset | 0 |
+| Parameter | Type    | Required | Description                                                      | Default |
+| --------- | ------- | -------- | ---------------------------------------------------------------- | ------- |
+| `title`   | string  | No       | Filter by manga title (case-insensitive, partial match)          | -       |
+| `author`  | string  | No       | Filter by author name (case-insensitive, partial match)          | -       |
+| `genre`   | string  | No       | Filter by genre                                                  | -       |
+| `status`  | string  | No       | Filter by status (`ongoing`, `completed`, `hiatus`, `cancelled`) | -       |
+| `limit`   | integer | No       | Number of results (max: 100)                                     | 20      |
+| `offset`  | integer | No       | Pagination offset                                                | 0       |
 
 **Success Response (200 OK):**
+
 ```json
 {
   "manga": [
@@ -206,9 +227,13 @@ GET /api/v1/manga
 ```
 
 **Examples:**
+
 ```bash
-# Search by title/author
-curl "http://localhost:8080/api/v1/manga?q=naruto"
+# Search by title
+curl "http://localhost:8080/api/v1/manga?title=naruto"
+
+# Search by author
+curl "http://localhost:8080/api/v1/manga?author=kishimoto"
 
 # Filter by genre
 curl "http://localhost:8080/api/v1/manga?genre=Action"
@@ -217,7 +242,7 @@ curl "http://localhost:8080/api/v1/manga?genre=Action"
 curl "http://localhost:8080/api/v1/manga?status=ongoing"
 
 # Combined filters with pagination
-curl "http://localhost:8080/api/v1/manga?genre=Action&status=ongoing&limit=10&offset=0"
+curl "http://localhost:8080/api/v1/manga?title=naruto&genre=Action&status=ongoing&limit=10&offset=0"
 ```
 
 ---
@@ -227,18 +252,20 @@ curl "http://localhost:8080/api/v1/manga?genre=Action&status=ongoing&limit=10&of
 Retrieve all manga with pagination.
 
 **Endpoint:**
+
 ```http
 GET /api/v1/manga/all
 ```
 
 **Query Parameters:**
 
-| Parameter | Type | Required | Description | Default |
-|-----------|------|----------|-------------|---------|
-| `limit` | integer | No | Number of results (max: 100) | 20 |
-| `offset` | integer | No | Pagination offset | 0 |
+| Parameter | Type    | Required | Description                  | Default |
+| --------- | ------- | -------- | ---------------------------- | ------- |
+| `limit`   | integer | No       | Number of results (max: 100) | 20      |
+| `offset`  | integer | No       | Pagination offset            | 0       |
 
 **Success Response (200 OK):**
+
 ```json
 {
   "manga": [
@@ -260,6 +287,7 @@ GET /api/v1/manga/all
 ```
 
 **Example:**
+
 ```bash
 curl "http://localhost:8080/api/v1/manga/all?limit=20&offset=0"
 ```
@@ -271,14 +299,17 @@ curl "http://localhost:8080/api/v1/manga/all?limit=20&offset=0"
 Retrieve detailed information about a specific manga.
 
 **Endpoint:**
+
 ```http
 GET /api/v1/manga/:id
 ```
 
 **Path Parameters:**
+
 - `id` (required): Manga ID
 
 **Success Response (200 OK):**
+
 ```json
 {
   "manga": {
@@ -299,6 +330,7 @@ GET /api/v1/manga/:id
 **Error Responses:**
 
 `404 Not Found` - Manga does not exist:
+
 ```json
 {
   "error": "Manga not found"
@@ -306,6 +338,7 @@ GET /api/v1/manga/:id
 ```
 
 **Example:**
+
 ```bash
 curl "http://localhost:8080/api/v1/manga/manga-001"
 ```
@@ -321,16 +354,19 @@ All user endpoints require authentication via JWT token.
 Retrieve the profile of the currently authenticated user.
 
 **Endpoint:**
+
 ```http
 GET /api/v1/users/me
 ```
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "user": {
@@ -345,12 +381,15 @@ Authorization: Bearer <token>
 **Error Responses:**
 
 `401 Unauthorized` - Missing or invalid token:
+
 ```json
 {
   "error": "Authorization header required"
 }
 ```
+
 or
+
 ```json
 {
   "error": "Invalid or expired token"
@@ -358,6 +397,7 @@ or
 ```
 
 **Example:**
+
 ```bash
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   "http://localhost:8080/api/v1/users/me"
@@ -370,16 +410,19 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 Retrieve all manga in the user's library with reading progress.
 
 **Endpoint:**
+
 ```http
 GET /api/v1/users/library
 ```
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "library": [
@@ -420,6 +463,7 @@ Authorization: Bearer <token>
 ```
 
 **Reading Status Values:**
+
 - `reading`: Currently reading
 - `completed`: Finished reading
 - `plan_to_read`: Planning to read
@@ -431,6 +475,7 @@ Authorization: Bearer <token>
 `401 Unauthorized` - Missing or invalid token
 
 **Example:**
+
 ```bash
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   "http://localhost:8080/api/v1/users/library"
@@ -443,17 +488,20 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 Add a manga to the user's library with initial status and progress.
 
 **Endpoint:**
+
 ```http
 POST /api/v1/users/library
 ```
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "manga_id": "manga-003",
@@ -464,13 +512,14 @@ Content-Type: application/json
 
 **Request Fields:**
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `manga_id` | string | Yes | ID of the manga to add |
-| `status` | string | Yes | Reading status (see options below) |
-| `current_chapter` | integer | No | Current chapter number (default: 0) |
+| Field             | Type    | Required | Description                         |
+| ----------------- | ------- | -------- | ----------------------------------- |
+| `manga_id`        | string  | Yes      | ID of the manga to add              |
+| `status`          | string  | Yes      | Reading status (see options below)  |
+| `current_chapter` | integer | No       | Current chapter number (default: 0) |
 
 **Status Options:**
+
 - `reading`: Currently reading
 - `completed`: Finished reading
 - `plan_to_read`: Planning to read
@@ -478,6 +527,7 @@ Content-Type: application/json
 - `dropped`: Abandoned
 
 **Success Response (201 Created):**
+
 ```json
 {
   "message": "Manga added to library"
@@ -487,6 +537,7 @@ Content-Type: application/json
 **Error Responses:**
 
 `400 Bad Request` - Invalid request body:
+
 ```json
 {
   "error": "Invalid request body"
@@ -496,6 +547,7 @@ Content-Type: application/json
 `401 Unauthorized` - Missing or invalid token
 
 `404 Not Found` - Manga does not exist:
+
 ```json
 {
   "error": "Manga not found"
@@ -503,6 +555,7 @@ Content-Type: application/json
 ```
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/users/library \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
@@ -521,19 +574,23 @@ curl -X POST http://localhost:8080/api/v1/users/library \
 Retrieve reading progress for a specific manga.
 
 **Endpoint:**
+
 ```http
 GET /api/v1/users/progress/:manga_id
 ```
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Path Parameters:**
+
 - `manga_id` (required): Manga ID
 
 **Success Response (200 OK):**
+
 ```json
 {
   "progress": {
@@ -563,6 +620,7 @@ Authorization: Bearer <token>
 `401 Unauthorized` - Missing or invalid token
 
 `404 Not Found` - Progress not found (manga not in library):
+
 ```json
 {
   "error": "Progress not found"
@@ -570,6 +628,7 @@ Authorization: Bearer <token>
 ```
 
 **Example:**
+
 ```bash
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   "http://localhost:8080/api/v1/users/progress/manga-001"
@@ -582,20 +641,24 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 Update reading progress for a manga in the user's library.
 
 **Endpoint:**
+
 ```http
 PUT /api/v1/users/progress/:manga_id
 ```
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Path Parameters:**
+
 - `manga_id` (required): Manga ID
 
 **Request Body:**
+
 ```json
 {
   "current_chapter": 100,
@@ -606,13 +669,14 @@ Content-Type: application/json
 
 **Request Fields:**
 
-| Field | Type | Required | Description | Constraints |
-|-------|------|----------|-------------|-------------|
-| `current_chapter` | integer | Yes | Current chapter number | 0 to total_chapters |
-| `status` | string | No | Reading status | See status options |
-| `rating` | integer | No | User rating | 1-10 |
+| Field             | Type    | Required | Description            | Constraints         |
+| ----------------- | ------- | -------- | ---------------------- | ------------------- |
+| `current_chapter` | integer | Yes      | Current chapter number | 0 to total_chapters |
+| `status`          | string  | No       | Reading status         | See status options  |
+| `rating`          | integer | No       | User rating            | 1-10                |
 
 **Success Response (200 OK):**
+
 ```json
 {
   "message": "Progress updated"
@@ -622,12 +686,15 @@ Content-Type: application/json
 **Error Responses:**
 
 `400 Bad Request` - Invalid request body:
+
 ```json
 {
   "error": "Invalid request body"
 }
 ```
+
 or invalid chapter number:
+
 ```json
 {
   "error": "Invalid chapter number"
@@ -637,6 +704,7 @@ or invalid chapter number:
 `401 Unauthorized` - Missing or invalid token
 
 `404 Not Found` - Manga not in library:
+
 ```json
 {
   "error": "Manga not in library"
@@ -644,6 +712,7 @@ or invalid chapter number:
 ```
 
 **Example:**
+
 ```bash
 curl -X PUT http://localhost:8080/api/v1/users/progress/manga-001 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
@@ -663,11 +732,13 @@ curl -X PUT http://localhost:8080/api/v1/users/progress/manga-001 \
 Check if the API server is running and database is connected.
 
 **Endpoint:**
+
 ```http
 GET /health
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "status": "ok",
@@ -677,6 +748,7 @@ GET /health
 ```
 
 **Error Response (500 Internal Server Error):**
+
 ```json
 {
   "status": "unhealthy",
@@ -686,6 +758,7 @@ GET /health
 ```
 
 **Example:**
+
 ```bash
 curl "http://localhost:8080/health"
 ```
@@ -706,19 +779,20 @@ All error responses follow this format:
 
 ### HTTP Status Codes
 
-| Status Code | Meaning | Description |
-|-------------|---------|-------------|
-| 200 | OK | Request succeeded |
-| 201 | Created | Resource created successfully |
-| 400 | Bad Request | Invalid request format or validation failed |
-| 401 | Unauthorized | Missing or invalid authentication token |
-| 404 | Not Found | Resource not found |
-| 409 | Conflict | Resource already exists (e.g., duplicate username) |
-| 500 | Internal Server Error | Server-side error |
+| Status Code | Meaning               | Description                                        |
+| ----------- | --------------------- | -------------------------------------------------- |
+| 200         | OK                    | Request succeeded                                  |
+| 201         | Created               | Resource created successfully                      |
+| 400         | Bad Request           | Invalid request format or validation failed        |
+| 401         | Unauthorized          | Missing or invalid authentication token            |
+| 404         | Not Found             | Resource not found                                 |
+| 409         | Conflict              | Resource already exists (e.g., duplicate username) |
+| 500         | Internal Server Error | Server-side error                                  |
 
 ### Common Error Scenarios
 
 **Missing Authorization Header:**
+
 ```json
 {
   "error": "Authorization header required"
@@ -726,6 +800,7 @@ All error responses follow this format:
 ```
 
 **Invalid Token Format:**
+
 ```json
 {
   "error": "Invalid authorization header format"
@@ -733,6 +808,7 @@ All error responses follow this format:
 ```
 
 **Expired or Invalid Token:**
+
 ```json
 {
   "error": "Invalid or expired token"
@@ -740,6 +816,7 @@ All error responses follow this format:
 ```
 
 **Validation Error:**
+
 ```json
 {
   "error": "Invalid request body"
@@ -794,7 +871,7 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 # 4. Search for manga
 echo -e "\n4. Searching for manga..."
-curl -s "$BASE_URL/manga?q=one%20piece" | jq .
+curl -s "$BASE_URL/manga?title=one%20piece" | jq .
 
 # 5. Get manga by ID
 echo -e "\n5. Getting manga by ID..."
@@ -845,6 +922,7 @@ Save this as `test-api.sh`, make it executable with `chmod +x test-api.sh`, and 
 ## Rate Limiting & Performance
 
 Currently, there are no rate limits implemented. For production use, consider:
+
 - Implementing rate limiting middleware
 - Adding request logging
 - Setting up monitoring and metrics
