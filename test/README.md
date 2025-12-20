@@ -10,12 +10,14 @@ test/
 │   ├── manga_service_test.go # Manga model tests
 │   ├── tcp_service_test.go   # TCP service & protocol tests
 │   └── grpc_service_test.go  # gRPC service & message tests
-├── grpc-client/              # Manual gRPC testing
-│   └── main.go               # gRPC client test tool
-├── tcp-simple/               # Manual TCP testing
-│   └── main.go               # TCP client test tool (existing)
-└── tcp-client/               # Interactive TCP client (existing)
-    └── main.go
+├── tcp-simple/               # Automated TCP testing
+│   └── main.go               # TCP automated test client
+├── tcp-client/               # Interactive TCP client
+│   └── main.go               # TCP interactive REPL
+├── grpc-simple/              # Automated gRPC testing
+│   └── main.go               # gRPC automated test client
+└── grpc-client/              # Interactive gRPC client
+    └── main.go               # gRPC interactive REPL
 ```
 
 ---
@@ -111,49 +113,124 @@ go tool cover -html=coverage.out -o coverage.html
 
 ### 2. gRPC Manual Testing
 
-Test all gRPC service methods:
+#### Option A: Automated Test (grpc-simple)
+
+Run all gRPC tests automatically:
 
 ```bash
 # Terminal 1: Start gRPC server
 make run-grpc
 
-# Terminal 2: Run gRPC client test
-go run test/grpc-client/main.go
+# Terminal 2: Run automated test
+go run test/grpc-simple/main.go
 ```
 
-#### What gets tested:
+**What gets tested:**
+1. GetManga - Retrieve manga by ID
+2. SearchManga by title - Search with title filter
+3. SearchManga by author - Search with author filter
+4. SearchManga by status - Filter by ongoing/completed
+5. Pagination - Test limit and offset
+6. UpdateProgress - Update user reading progress
+7. Error handling - Test non-existent manga
 
-1. **GetManga**: Retrieve manga by ID
-2. **SearchManga by title**: Search with title filter
-3. **SearchManga by author**: Search with author filter
-4. **SearchManga by status**: Filter by ongoing/completed
-5. **Pagination**: Test limit and offset
-6. **UpdateProgress**: Update user reading progress
-7. **Error handling**: Test non-existent manga
+**Note**: Update manga IDs in `test/grpc-simple/main.go` to match your database.
 
-**Note**: You need to update manga IDs and user IDs in `test/grpc-client/main.go` to match your database.
+#### Option B: Interactive Client (grpc-client)
+
+Test interactively with custom commands:
+
+```bash
+# Terminal 1: Start gRPC server
+make run-grpc
+
+# Terminal 2: Run interactive client
+go run test/grpc-client/main.go
+
+# Available commands:
+> get manga-123
+> search title=One
+> search author=Oda limit=5
+> search status=ongoing
+> update user-123 manga-456 50
+> update user-123 manga-456 50 8 reading
+> help
+> quit
+```
+
+**Commands:**
+- `get <manga_id>` - Get manga by ID
+- `search title=<query>` - Search by title
+- `search author=<query>` - Search by author
+- `search status=<status>` - Search by status (ongoing/completed/hiatus/cancelled)
+- `search title=<query> limit=<n> offset=<n>` - Search with pagination
+- `update <user_id> <manga_id> <chapter>` - Update progress
+- `update <user_id> <manga_id> <chapter> <rating> <status>` - Full update with rating
+- `help` - Show all commands
+- `quit` - Exit
 
 ---
 
-### 3. TCP Manual Testing (Existing)
+### 3. TCP Manual Testing
 
-Test TCP progress synchronization:
+#### Setup: Get JWT Token
+
+First, get a JWT token for authentication:
 
 ```bash
-# Terminal 1: Start API server (for login/JWT)
+# Terminal 1: Start API server
 make run-api
 
-# Terminal 2: Start TCP server
-make run-tcp
-
-# Terminal 3: Register and login to get JWT token
+# Terminal 2: Register and login
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
 
-# Copy the token from response, then run TCP client
+# Copy the token from response
+```
+
+#### Option A: Automated Test (tcp-simple)
+
+Run all TCP tests automatically:
+
+```bash
+# Terminal 1: Start TCP server
+make run-tcp
+
+# Terminal 2: Run automated test
 go run test/tcp-simple/main.go <YOUR_JWT_TOKEN>
 ```
+
+**What gets tested:**
+1. Connection to TCP server
+2. Authentication with JWT
+3. Ping/Pong heartbeat
+4. Progress update sent
+5. Broadcast received
+
+#### Option B: Interactive Client (tcp-client)
+
+Test interactively with custom commands:
+
+```bash
+# Terminal 1: Start TCP server
+make run-tcp
+
+# Terminal 2: Run interactive client
+go run test/tcp-client/main.go -token <YOUR_JWT_TOKEN>
+
+# Available commands:
+> ping
+> progress manga-123 50
+> quit
+```
+
+**Commands:**
+- `ping` - Send heartbeat ping to server
+- `progress <manga_id> <chapter>` - Send progress update
+- `quit` - Exit client
+
+**Note**: The client automatically receives broadcasts from other connected clients.
 
 ---
 
@@ -302,8 +379,17 @@ test-all: test-unit ## Run all automated tests
 ## Quick Test Command Reference
 
 ```bash
+# ==========================================
+# Unit Tests
+# ==========================================
+
 # Run all unit tests
 go test ./test/unit/... -v
+
+# Run specific test file
+go test ./test/unit/auth_test.go -v
+go test ./test/unit/tcp_service_test.go -v
+go test ./test/unit/grpc_service_test.go -v
 
 # Run specific test
 go test ./test/unit/ -run TestJWT_GenerateToken -v
@@ -312,11 +398,27 @@ go test ./test/unit/ -run TestJWT_GenerateToken -v
 go test ./test/unit/... -cover -coverprofile=coverage.out
 go tool cover -html=coverage.out
 
-# Test gRPC (server must be running)
-go run test/grpc-client/main.go
+# ==========================================
+# gRPC Manual Tests (server must be running)
+# ==========================================
 
-# Test TCP (need JWT token)
-go run test/tcp-simple/main.go <token>
+# Automated test
+go run test/grpc-simple/main.go
+
+# Interactive client
+go run test/grpc-client/main.go
+go run test/grpc-client/main.go -host localhost -port 9092
+
+# ==========================================
+# TCP Manual Tests (need JWT token)
+# ==========================================
+
+# Automated test
+go run test/tcp-simple/main.go <JWT_TOKEN>
+
+# Interactive client
+go run test/tcp-client/main.go -token <JWT_TOKEN>
+go run test/tcp-client/main.go -host localhost -port 9090 -token <JWT_TOKEN>
 ```
 
 ---

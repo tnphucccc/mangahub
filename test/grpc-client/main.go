@@ -1,9 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	pb "github.com/tnphucccc/mangahub/internal/grpc/pb"
@@ -12,223 +17,281 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	client pb.MangaServiceClient
+	ctx    context.Context
+)
+
 func main() {
+	// Command line flags
+	host := flag.String("host", "localhost", "gRPC server host")
+	port := flag.String("port", "9092", "gRPC server port")
+	flag.Parse()
+
 	// Connect to gRPC server
-	conn, err := grpc.Dial("localhost:9092",
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	addr := fmt.Sprintf("%s:%s", *host, *port)
+	log.Printf("Connecting to gRPC server at %s...", addr)
+
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
 	defer conn.Close()
 
-	client := pb.NewMangaServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	client = pb.NewMangaServiceClient(conn)
+	ctx = context.Background()
 
-	fmt.Println("=== MangaHub gRPC Service Test ===\n")
+	log.Println("✅ Connected to gRPC server")
 
-	// Test 1: Get manga by ID
-	fmt.Println("1. Getting Manga by ID:")
-	testGetManga(ctx, client)
+	// Interactive command loop
+	fmt.Println("\n=== gRPC Client Connected ===")
+	fmt.Println("Commands:")
+	fmt.Println("  get <manga_id>                              - Get manga by ID")
+	fmt.Println("  search title=<query>                        - Search by title")
+	fmt.Println("  search author=<query>                       - Search by author")
+	fmt.Println("  search status=<status>                      - Search by status")
+	fmt.Println("  search title=<query> limit=<n> offset=<n>   - Search with pagination")
+	fmt.Println("  update <user_id> <manga_id> <chapter>       - Update progress")
+	fmt.Println("  update <user_id> <manga_id> <chapter> <rating> <status> - Full update")
+	fmt.Println("  help                                         - Show commands")
+	fmt.Println("  quit                                         - Exit")
+	fmt.Println()
 
-	// Test 2: Search manga by title
-	fmt.Println("\n2. Searching Manga by Title:")
-	testSearchByTitle(ctx, client)
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		fmt.Print("> ")
+		if !scanner.Scan() {
+			break
+		}
 
-	// Test 3: Search manga by author
-	fmt.Println("\n3. Searching Manga by Author:")
-	testSearchByAuthor(ctx, client)
+		line := scanner.Text()
+		if line == "" {
+			continue
+		}
 
-	// Test 4: Search manga by status
-	fmt.Println("\n4. Searching Manga by Status:")
-	testSearchByStatus(ctx, client)
-
-	// Test 5: Search with pagination
-	fmt.Println("\n5. Searching with Pagination:")
-	testSearchWithPagination(ctx, client)
-
-	// Test 6: Update progress
-	fmt.Println("\n6. Updating Reading Progress:")
-	testUpdateProgress(ctx, client)
-
-	// Test 7: Get non-existent manga (error case)
-	fmt.Println("\n7. Testing Error Handling (Non-existent Manga):")
-	testGetNonExistentManga(ctx, client)
-
-	fmt.Println("\n✓ gRPC Service Test completed successfully!")
-	fmt.Println("✓ All RPC methods tested")
-	fmt.Println("✓ Error handling verified")
+		// Parse and execute command
+		handleCommand(line)
+	}
 }
 
-func testGetManga(ctx context.Context, client pb.MangaServiceClient) {
-	// Note: You'll need to use an actual manga ID from your database
-	req := &pb.GetMangaRequest{
-		MangaId: "1", // Change to actual ID in your database
+func handleCommand(line string) {
+	parts := strings.Fields(line)
+	if len(parts) == 0 {
+		return
 	}
+
+	cmd := parts[0]
+
+	switch cmd {
+	case "quit", "exit":
+		log.Println("Exiting...")
+		os.Exit(0)
+
+	case "help":
+		showHelp()
+
+	case "get":
+		if len(parts) < 2 {
+			fmt.Println("Usage: get <manga_id>")
+			return
+		}
+		handleGetManga(parts[1])
+
+	case "search":
+		if len(parts) < 2 {
+			fmt.Println("Usage: search title=<query> | author=<query> | status=<status>")
+			return
+		}
+		handleSearch(parts[1:])
+
+	case "update":
+		if len(parts) < 4 {
+			fmt.Println("Usage: update <user_id> <manga_id> <chapter> [rating] [status]")
+			return
+		}
+		handleUpdateProgress(parts[1:])
+
+	default:
+		fmt.Println("Unknown command. Type 'help' for available commands.")
+	}
+}
+
+func handleGetManga(mangaID string) {
+	req := &pb.GetMangaRequest{
+		MangaId: mangaID,
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	resp, err := client.GetManga(ctx, req)
 	if err != nil {
 		st, _ := status.FromError(err)
-		fmt.Printf("   GetManga failed: %s (Code: %s)\n", st.Message(), st.Code())
-		fmt.Println("   Note: Make sure manga ID '1' exists in database")
+		fmt.Printf("❌ Error: %s (Code: %s)\n", st.Message(), st.Code())
 		return
 	}
 
-	fmt.Printf("   ✓ Manga retrieved successfully\n")
+	fmt.Println("✅ Manga retrieved:")
 	fmt.Printf("   ID: %s\n", resp.Id)
 	fmt.Printf("   Title: %s\n", resp.Title)
 	fmt.Printf("   Author: %s\n", resp.Author)
 	fmt.Printf("   Genres: %v\n", resp.Genres)
 	fmt.Printf("   Status: %s\n", resp.Status)
 	fmt.Printf("   Total Chapters: %d\n", resp.TotalChapters)
-	fmt.Printf("   Description: %s\n", truncateString(resp.Description, 80))
+	fmt.Printf("   Description: %s\n", truncateString(resp.Description, 100))
+	if resp.CoverUrl != "" {
+		fmt.Printf("   Cover URL: %s\n", resp.CoverUrl)
+	}
 }
 
-func testSearchByTitle(ctx context.Context, client pb.MangaServiceClient) {
+func handleSearch(args []string) {
 	req := &pb.SearchRequest{
-		Title:  "One",
-		Limit:  10,
-		Offset: 0,
+		Limit:  10, // Default limit
+		Offset: 0,  // Default offset
 	}
+
+	// Parse arguments (key=value format)
+	for _, arg := range args {
+		parts := strings.SplitN(arg, "=", 2)
+		if len(parts) != 2 {
+			fmt.Printf("Invalid argument format: %s (expected key=value)\n", arg)
+			continue
+		}
+
+		key := parts[0]
+		value := parts[1]
+
+		switch key {
+		case "title":
+			req.Title = value
+		case "author":
+			req.Author = value
+		case "genre":
+			req.Genre = value
+		case "status":
+			req.Status = value
+		case "limit":
+			if n, err := strconv.ParseInt(value, 10, 32); err == nil {
+				req.Limit = int32(n)
+			}
+		case "offset":
+			if n, err := strconv.ParseInt(value, 10, 32); err == nil {
+				req.Offset = int32(n)
+			}
+		default:
+			fmt.Printf("Unknown search parameter: %s\n", key)
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	resp, err := client.SearchManga(ctx, req)
 	if err != nil {
 		st, _ := status.FromError(err)
-		fmt.Printf("   SearchManga failed: %s (Code: %s)\n", st.Message(), st.Code())
+		fmt.Printf("❌ Error: %s (Code: %s)\n", st.Message(), st.Code())
 		return
 	}
 
-	fmt.Printf("   ✓ Search by title successful\n")
-	fmt.Printf("   Found %d manga\n", len(resp.Manga))
+	fmt.Printf("✅ Found %d manga:\n", len(resp.Manga))
 	for i, manga := range resp.Manga {
-		fmt.Printf("   %d. [ID:%s] %s by %s\n", i+1, manga.Id, manga.Title, manga.Author)
+		fmt.Printf("   %d. [ID:%s] %s by %s (%s) - %d chapters\n",
+			i+1, manga.Id, manga.Title, manga.Author, manga.Status, manga.TotalChapters)
+	}
+
+	if len(resp.Manga) == 0 {
+		fmt.Println("   No results found")
 	}
 }
 
-func testSearchByAuthor(ctx context.Context, client pb.MangaServiceClient) {
-	req := &pb.SearchRequest{
-		Author: "Oda",
-		Limit:  10,
-		Offset: 0,
-	}
-
-	resp, err := client.SearchManga(ctx, req)
-	if err != nil {
-		st, _ := status.FromError(err)
-		fmt.Printf("   SearchManga failed: %s (Code: %s)\n", st.Message(), st.Code())
+func handleUpdateProgress(args []string) {
+	if len(args) < 3 {
+		fmt.Println("Usage: update <user_id> <manga_id> <chapter> [rating] [status]")
 		return
 	}
 
-	fmt.Printf("   ✓ Search by author successful\n")
-	fmt.Printf("   Found %d manga\n", len(resp.Manga))
-	for i, manga := range resp.Manga {
-		fmt.Printf("   %d. %s by %s\n", i+1, manga.Title, manga.Author)
-	}
-}
+	userID := args[0]
+	mangaID := args[1]
 
-func testSearchByStatus(ctx context.Context, client pb.MangaServiceClient) {
-	req := &pb.SearchRequest{
-		Status: "ongoing",
-		Limit:  10,
-		Offset: 0,
-	}
-
-	resp, err := client.SearchManga(ctx, req)
+	chapter, err := strconv.ParseInt(args[2], 10, 32)
 	if err != nil {
-		st, _ := status.FromError(err)
-		fmt.Printf("   SearchManga failed: %s (Code: %s)\n", st.Message(), st.Code())
+		fmt.Printf("Invalid chapter number: %s\n", args[2])
 		return
 	}
 
-	fmt.Printf("   ✓ Search by status successful\n")
-	fmt.Printf("   Found %d ongoing manga\n", len(resp.Manga))
-	for i, manga := range resp.Manga {
-		fmt.Printf("   %d. %s - Status: %s (%d chapters)\n", i+1, manga.Title, manga.Status, manga.TotalChapters)
-	}
-}
-
-func testSearchWithPagination(ctx context.Context, client pb.MangaServiceClient) {
-	// First page
-	fmt.Println("   Page 1 (limit 3):")
-	req1 := &pb.SearchRequest{
-		Limit:  3,
-		Offset: 0,
-	}
-
-	resp1, err := client.SearchManga(ctx, req1)
-	if err != nil {
-		st, _ := status.FromError(err)
-		fmt.Printf("   SearchManga failed: %s\n", st.Message())
-		return
-	}
-
-	for i, manga := range resp1.Manga {
-		fmt.Printf("     %d. [ID:%s] %s\n", i+1, manga.Id, manga.Title)
-	}
-
-	// Second page
-	fmt.Println("   Page 2 (limit 3, offset 3):")
-	req2 := &pb.SearchRequest{
-		Limit:  3,
-		Offset: 3,
-	}
-
-	resp2, err := client.SearchManga(ctx, req2)
-	if err != nil {
-		st, _ := status.FromError(err)
-		fmt.Printf("   SearchManga failed: %s\n", st.Message())
-		return
-	}
-
-	for i, manga := range resp2.Manga {
-		fmt.Printf("     %d. [ID:%s] %s\n", i+1, manga.Id, manga.Title)
-	}
-
-	fmt.Printf("   ✓ Pagination working correctly\n")
-}
-
-func testUpdateProgress(ctx context.Context, client pb.MangaServiceClient) {
-	// Note: You'll need actual user and manga IDs
 	req := &pb.UpdateProgressRequest{
-		UserId:  "test-user-id", // Change to actual user ID
-		MangaId: "1",            // Change to actual manga ID
-		Status:  "reading",
-		Chapter: 50,
-		Rating:  8,
+		UserId:  userID,
+		MangaId: mangaID,
+		Chapter: int32(chapter),
 	}
+
+	// Optional rating
+	if len(args) >= 4 {
+		if rating, err := strconv.ParseInt(args[3], 10, 32); err == nil {
+			req.Rating = int32(rating)
+		}
+	}
+
+	// Optional status
+	if len(args) >= 5 {
+		req.Status = args[4]
+	} else {
+		req.Status = "reading" // Default status
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	resp, err := client.UpdateProgress(ctx, req)
 	if err != nil {
 		st, _ := status.FromError(err)
-		fmt.Printf("   UpdateProgress failed: %s (Code: %s)\n", st.Message(), st.Code())
-		fmt.Println("   Note: Make sure user and manga IDs exist in database")
+		fmt.Printf("❌ Error: %s (Code: %s)\n", st.Message(), st.Code())
 		return
 	}
 
-	fmt.Printf("   ✓ Progress updated successfully\n")
+	fmt.Println("✅ Progress updated:")
 	fmt.Printf("   User ID: %s\n", resp.Progress.UserId)
 	fmt.Printf("   Manga ID: %s\n", resp.Progress.MangaId)
 	fmt.Printf("   Current Chapter: %d\n", resp.Progress.CurrentChapter)
 	fmt.Printf("   Status: %s\n", resp.Progress.Status)
-	fmt.Printf("   Rating: %d/10\n", resp.Progress.Rating)
+	if resp.Progress.Rating > 0 {
+		fmt.Printf("   Rating: %d/10\n", resp.Progress.Rating)
+	}
+	fmt.Printf("   Updated At: %s\n", resp.Progress.UpdatedAt)
 }
 
-func testGetNonExistentManga(ctx context.Context, client pb.MangaServiceClient) {
-	req := &pb.GetMangaRequest{
-		MangaId: "non-existent-id-999999",
-	}
-
-	_, err := client.GetManga(ctx, req)
-	if err != nil {
-		st, _ := status.FromError(err)
-		fmt.Printf("   Expected error received: %s ✓\n", st.Message())
-		fmt.Printf("   Error code: %s\n", st.Code())
-	} else {
-		fmt.Println("   ERROR: Should have received an error!")
-	}
+func showHelp() {
+	fmt.Println("\nAvailable commands:")
+	fmt.Println()
+	fmt.Println("Manga Retrieval:")
+	fmt.Println("  get <manga_id>")
+	fmt.Println("    Example: get manga-123")
+	fmt.Println()
+	fmt.Println("Search:")
+	fmt.Println("  search title=<query>")
+	fmt.Println("    Example: search title=One")
+	fmt.Println("  search author=<query>")
+	fmt.Println("    Example: search author=Oda")
+	fmt.Println("  search status=<status>")
+	fmt.Println("    Example: search status=ongoing")
+	fmt.Println("  search title=<query> limit=<n> offset=<n>")
+	fmt.Println("    Example: search title=One limit=5 offset=0")
+	fmt.Println()
+	fmt.Println("Progress Update:")
+	fmt.Println("  update <user_id> <manga_id> <chapter>")
+	fmt.Println("    Example: update user-123 manga-456 50")
+	fmt.Println("  update <user_id> <manga_id> <chapter> <rating> <status>")
+	fmt.Println("    Example: update user-123 manga-456 50 8 reading")
+	fmt.Println()
+	fmt.Println("Status values: reading, completed, plan_to_read, on_hold, dropped")
+	fmt.Println("Rating: 1-10")
+	fmt.Println()
+	fmt.Println("Other:")
+	fmt.Println("  help - Show this help message")
+	fmt.Println("  quit - Exit the client")
+	fmt.Println()
 }
 
-// Helper function to truncate long strings
 func truncateString(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s
