@@ -25,6 +25,8 @@ node_modules/
 bin/
 dist/
 build/
+.next/
+.turbo/
 
 # IDEs and editors
 .vscode/
@@ -39,8 +41,14 @@ build/
 .env.local
 .env.*.local
 
-# Yarn lockfile
+# Yarn files (only root lockfile should exist in monorepo)
 /yarn.lock
+packages/*/yarn.lock
+apps/*/yarn.lock
+packages/*/.yarnrc.yml
+apps/*/.yarnrc.yml
+packages/*/.pnp.*
+apps/*/.pnp.*
 
 # Database files
 *.db

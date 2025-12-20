@@ -1,0 +1,48 @@
+{
+  "name": "mangahub-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MangaHub - Network Programming Project (Hybrid Go/TypeScript Monorepo)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "dev": "turbo run dev --parallel",
+    "generate": "turbo run generate",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "docs:preview": "yarn workspace @mangahub/spec preview",
+    "docs:validate": "yarn workspace @mangahub/spec validate"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "turbo": "^2.3.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "yarn": ">=4.0.0"
+  },
+  "packageManager": "yarn@4.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tnphucccc/mangahub.git"
+  },
+  "keywords": [
+    "manga",
+    "network-programming",
+    "go",
+    "typescript",
+    "monorepo",
+    "turborepo",
+    "yarn-workspaces"
+  ],
+  "author": "MangaHub Team",
+  "license": "MIT"
+}
