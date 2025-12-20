@@ -4,12 +4,12 @@
  * THIS FILE IS AUTO-GENERATED - DO NOT EDIT MANUALLY
  *
  * To regenerate:
- *   cd api && yarn generate
+ *   yarn workspace @mangahub/types generate
  *
  * Or from project root:
  *   make generate-types
  *
- * Generated: 2025-12-20T14:24:40.795Z
+ * Generated: 2025-12-20T18:27:23.214Z
  */
 
 // Re-export all generated types
@@ -30,6 +30,7 @@ export type Schemas = components['schemas'];
 export type User = Schemas['User'];
 export type Manga = Schemas['Manga'];
 export type UserProgress = Schemas['UserProgress'];
+export type UserProgressWithManga = Schemas['UserProgressWithManga'];
 
 // ============================================
 // Enum Types
@@ -57,6 +58,12 @@ export type ProgressUpdateRequest = Schemas['ProgressUpdateRequest'];
 export type APIResponse = Schemas['APIResponse'];
 export type APIError = Schemas['APIError'];
 export type Meta = Schemas['Meta'];
+export type AuthResponse = Schemas['AuthResponse'];
+export type UserProfileResponse = Schemas['UserProfileResponse'];
+export type MangaListResponse = Schemas['MangaListResponse'];
+export type MangaDetailResponse = Schemas['MangaDetailResponse'];
+export type LibraryResponse = Schemas['LibraryResponse'];
+export type ProgressResponse = Schemas['ProgressResponse'];
 
 // ============================================
 // TCP Message Types
