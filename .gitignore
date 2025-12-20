@@ -18,6 +18,8 @@ go.work
 
 # Dependency directories
 vendor/
+node_modules/
+/.yarn/
 
 # Build output
 bin/
@@ -36,6 +38,9 @@ build/
 .env
 .env.local
 .env.*.local
+
+# Yarn lockfile
+/yarn.lock
 
 # Database files
 *.db
