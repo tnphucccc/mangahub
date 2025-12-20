@@ -330,6 +330,54 @@ export interface components {
             message?: string;
         };
         /** @enum {string} */
+        UDPMessageType: "register" | "unregister" | "ping" | "register_success" | "register_failed" | "pong" | "notification" | "error";
+        UDPMessage: {
+            type: components["schemas"]["UDPMessageType"];
+            /** Format: date-time */
+            timestamp: string;
+            data?: Record<string, never>;
+        };
+        UDPRegisterMessage: {
+            /** @description Unique client identifier */
+            client_id: string;
+            user_id?: string;
+            username?: string;
+        };
+        UDPRegisterSuccessMessage: {
+            client_id?: string;
+            message?: string;
+        };
+        UDPRegisterFailedMessage: {
+            reason?: string;
+        };
+        UDPUnregisterMessage: {
+            client_id: string;
+        };
+        UDPNotification: {
+            manga_id: string;
+            manga_title: string;
+            chapter_number: number;
+            chapter_title?: string;
+            /** Format: date-time */
+            release_date: string;
+            /** @example New chapter released! */
+            message: string;
+        };
+        UDPPingMessage: {
+            /** Format: date-time */
+            client_time?: string;
+        };
+        UDPPongMessage: {
+            /** Format: date-time */
+            server_time?: string;
+            /** Format: date-time */
+            client_time?: string;
+        };
+        UDPErrorMessage: {
+            code?: string;
+            message?: string;
+        };
+        /** @enum {string} */
         ChatMessageType: "join" | "leave" | "message" | "system" | "error";
         ChatMessage: {
             type: components["schemas"]["ChatMessageType"];

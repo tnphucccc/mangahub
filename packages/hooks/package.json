@@ -1,0 +1,40 @@
+{
+  "name": "@mangahub/hooks",
+  "version": "1.0.0",
+  "description": "React hooks for MangaHub API integration",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests yet\"",
+    "lint": "echo \"No linter configured yet\""
+  },
+  "dependencies": {
+    "@mangahub/api": "workspace:*",
+    "@mangahub/types": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "react": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

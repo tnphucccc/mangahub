@@ -1,14 +1,15 @@
 /**
  * MangaHub API TypeScript Types
- * 
- * THIS FILE IS AUTO-GENERATED FROM openapi.yaml
- * DO NOT EDIT MANUALLY
- * 
+ *
+ * THIS FILE IS AUTO-GENERATED - DO NOT EDIT MANUALLY
+ *
  * To regenerate:
- *   cd api && npm run generate
- * 
+ *   cd api && yarn generate
+ *
  * Or from project root:
  *   make generate-types
+ *
+ * Generated: 2025-12-20T14:24:40.795Z
  */
 
 // Re-export all generated types
@@ -22,36 +23,45 @@ import type { components, paths } from './generated';
 
 // Convenient type aliases
 export type Schemas = components['schemas'];
+// ============================================
+// Entity Types
+// ============================================
 
-// Entity types
 export type User = Schemas['User'];
 export type Manga = Schemas['Manga'];
 export type UserProgress = Schemas['UserProgress'];
-export type UserProgressWithManga = Schemas['UserProgressWithManga'];
 
-// Enum types
+// ============================================
+// Enum Types
+// ============================================
+
 export type MangaStatus = Schemas['MangaStatus'];
 export type ReadingStatus = Schemas['ReadingStatus'];
 export type TCPMessageType = Schemas['TCPMessageType'];
+export type UDPMessageType = Schemas['UDPMessageType'];
 export type ChatMessageType = Schemas['ChatMessageType'];
 
-// Request types
+// ============================================
+// Request Types
+// ============================================
+
 export type UserRegisterRequest = Schemas['UserRegisterRequest'];
 export type UserLoginRequest = Schemas['UserLoginRequest'];
 export type LibraryAddRequest = Schemas['LibraryAddRequest'];
 export type ProgressUpdateRequest = Schemas['ProgressUpdateRequest'];
 
-// Response types
+// ============================================
+// Response Types
+// ============================================
+
 export type APIResponse = Schemas['APIResponse'];
 export type APIError = Schemas['APIError'];
 export type Meta = Schemas['Meta'];
-export type AuthResponse = Schemas['AuthResponse'];
-export type MangaListResponse = Schemas['MangaListResponse'];
-export type MangaDetailResponse = Schemas['MangaDetailResponse'];
-export type LibraryResponse = Schemas['LibraryResponse'];
-export type ProgressResponse = Schemas['ProgressResponse'];
 
-// TCP/WebSocket message types
+// ============================================
+// TCP Message Types
+// ============================================
+
 export type TCPMessage = Schemas['TCPMessage'];
 export type TCPAuthMessage = Schemas['TCPAuthMessage'];
 export type TCPAuthSuccessMessage = Schemas['TCPAuthSuccessMessage'];
@@ -59,17 +69,34 @@ export type TCPAuthFailedMessage = Schemas['TCPAuthFailedMessage'];
 export type TCPProgressMessage = Schemas['TCPProgressMessage'];
 export type TCPProgressBroadcast = Schemas['TCPProgressBroadcast'];
 export type TCPErrorMessage = Schemas['TCPErrorMessage'];
-export type ChatMessage = Schemas['ChatMessage'];
 
-// Path operation types (for API client typing)
+// ============================================
+// UDP Message Types
+// ============================================
+
+export type UDPMessage = Schemas['UDPMessage'];
+export type UDPRegisterMessage = Schemas['UDPRegisterMessage'];
+export type UDPRegisterSuccessMessage = Schemas['UDPRegisterSuccessMessage'];
+export type UDPRegisterFailedMessage = Schemas['UDPRegisterFailedMessage'];
+export type UDPUnregisterMessage = Schemas['UDPUnregisterMessage'];
+export type UDPNotification = Schemas['UDPNotification'];
+export type UDPPingMessage = Schemas['UDPPingMessage'];
+export type UDPPongMessage = Schemas['UDPPongMessage'];
+export type UDPErrorMessage = Schemas['UDPErrorMessage'];
+
+// ============================================
+// WebSocket Message Types
+// ============================================
+
+export type ChatMessage = Schemas['ChatMessage'];
+// ============================================
+// Path Operation Types (for API client typing)
+// ============================================
+
 export type Paths = paths;
 
-// ============================================
-// API Client Helper Types
-// ============================================
-
 /** Extract successful response data type from an endpoint */
-export type SuccessResponse<T extends keyof paths, M extends keyof paths[T]> = 
+export type SuccessResponse<T extends keyof paths, M extends keyof paths[T]> =
   paths[T][M] extends { responses: { 200: { content: { 'application/json': infer R } } } }
     ? R
     : paths[T][M] extends { responses: { 201: { content: { 'application/json': infer R } } } }

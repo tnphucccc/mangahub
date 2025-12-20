@@ -54,8 +54,8 @@ run-all: ## Run all servers (requires tmux or multiple terminals)
 
 generate-types: ## Generate TypeScript types from OpenAPI spec
 	@echo "Generating TypeScript types..."
-	cd api && yarn install && yarn generate
-	@echo "Types generated at api/typescript/generated.ts"
+	yarn workspace @mangahub/types generate
+	@echo "Types generated at packages/types/src/generated.ts"
 
 generate-proto: ## Generate Go code from Protocol Buffers
 	@echo "Generating gRPC code..."
@@ -118,10 +118,35 @@ tidy: ## Tidy go modules
 # ==========================================
 
 docs-preview: ## Preview OpenAPI documentation
-	cd api && yarn preview
+	yarn workspace @mangahub/spec preview
 
 docs-validate: ## Validate OpenAPI specification
-	cd api && yarn validate
+	yarn workspace @mangahub/spec validate
+
+# ==========================================
+# JavaScript/TypeScript Commands (Monorepo)
+# ==========================================
+
+js-install: ## Install JavaScript dependencies
+	yarn install
+
+js-build: ## Build all JavaScript packages
+	yarn build
+
+js-dev: ## Run Next.js web app in dev mode
+	yarn workspace @mangahub/web dev
+
+js-test: ## Run JavaScript tests
+	yarn test
+
+js-lint: ## Lint JavaScript code
+	yarn lint
+
+js-typecheck: ## Type-check JavaScript code
+	yarn typecheck
+
+js-clean: ## Clean JavaScript build artifacts
+	yarn clean
 
 # ==========================================
 # Cleanup
@@ -130,7 +155,10 @@ docs-validate: ## Validate OpenAPI specification
 clean: ## Clean build artifacts
 	rm -rf bin/
 	rm -f coverage.out coverage.html
-	@echo "Cleaned build artifacts"
+	@echo "Cleaned Go build artifacts"
+
+clean-all: clean js-clean ## Clean all build artifacts (Go + JS)
+	@echo "Cleaned all build artifacts"
 
 # ==========================================
 # Help

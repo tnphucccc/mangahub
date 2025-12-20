@@ -745,6 +745,120 @@ components:
           type: string
 
     # ==========================================
+    # UDP Notification Schemas
+    # ==========================================
+    UDPMessageType:
+      type: string
+      enum:
+        - register
+        - unregister
+        - ping
+        - register_success
+        - register_failed
+        - pong
+        - notification
+        - error
+
+    UDPMessage:
+      type: object
+      required:
+        - type
+        - timestamp
+      properties:
+        type:
+          $ref: "#/components/schemas/UDPMessageType"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+
+    UDPRegisterMessage:
+      type: object
+      required:
+        - client_id
+      properties:
+        client_id:
+          type: string
+          description: Unique client identifier
+        user_id:
+          type: string
+        username:
+          type: string
+
+    UDPRegisterSuccessMessage:
+      type: object
+      properties:
+        client_id:
+          type: string
+        message:
+          type: string
+
+    UDPRegisterFailedMessage:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    UDPUnregisterMessage:
+      type: object
+      required:
+        - client_id
+      properties:
+        client_id:
+          type: string
+
+    UDPNotification:
+      type: object
+      required:
+        - manga_id
+        - manga_title
+        - chapter_number
+        - release_date
+        - message
+      properties:
+        manga_id:
+          type: string
+        manga_title:
+          type: string
+        chapter_number:
+          type: integer
+          minimum: 1
+        chapter_title:
+          type: string
+        release_date:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: "New chapter released!"
+
+    UDPPingMessage:
+      type: object
+      properties:
+        client_time:
+          type: string
+          format: date-time
+
+    UDPPongMessage:
+      type: object
+      properties:
+        server_time:
+          type: string
+          format: date-time
+        client_time:
+          type: string
+          format: date-time
+
+    UDPErrorMessage:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    # ==========================================
     # WebSocket Chat Schemas
     # ==========================================
     ChatMessageType:
