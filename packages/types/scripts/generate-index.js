@@ -13,15 +13,16 @@
 const fs = require('fs');
 const path = require('path');
 
-const GENERATED_FILE = path.join(__dirname, '../typescript/generated.ts');
-const OUTPUT_FILE = path.join(__dirname, '../typescript/index.ts');
+const GENERATED_FILE = path.join(__dirname, '../src/generated.ts');
+const OUTPUT_FILE = path.join(__dirname, '../src/index.ts');
 
 // Read generated.ts
 const generatedContent = fs.readFileSync(GENERATED_FILE, 'utf-8');
 
 // Extract schema names from components["schemas"]
-// Match both objects: SchemaName: { ... }; and enums: SchemaName: "val1" | "val2";
-const objectSchemas = generatedContent.matchAll(/^\s{8}(\w+):\s*{/gm);
+// Match objects: SchemaName: { ... } or SchemaName: components["schemas"]["X"] & { ... }
+// And enums: SchemaName: "val1" | "val2";
+const objectSchemas = generatedContent.matchAll(/^\s{8}(\w+):\s*(?:components\["schemas"\]\["\w+"\]\s*&\s*)?{/gm);
 const enumSchemas = generatedContent.matchAll(/^\s{8}(\w+):\s*"/gm);
 
 const schemaNames = [
@@ -60,7 +61,7 @@ const header = `/**
  * THIS FILE IS AUTO-GENERATED - DO NOT EDIT MANUALLY
  *
  * To regenerate:
- *   cd api && yarn generate
+ *   yarn workspace @mangahub/types generate
  *
  * Or from project root:
  *   make generate-types

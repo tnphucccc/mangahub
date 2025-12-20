@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { User } from '../../../../api/typescript'
+import { User } from '@mangahub/types'
 import { apiClient } from '../../lib/apiClient'
 
 interface AuthContextType {
@@ -31,9 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async (authToken: string) => {
     try {
       apiClient.setDefaultHeader('Authorization', `Bearer ${authToken}`)
-      // The `getCurrentUser` response is wrapped in a `user` object.
+      // The axios interceptor already unwraps the response
       const response = await apiClient.getCurrentUser()
-      setUser(response.user)
+      setUser(response)
     } catch (error) {
       console.error('Failed to fetch user', error)
       logout()

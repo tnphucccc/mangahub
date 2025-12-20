@@ -4,7 +4,7 @@ import type {
   AuthResponse,
   User,
   APIError,
-} from '../../../api/typescript'
+} from '@mangahub/types'
 
 // Create an axios instance with a base URL.
 // The Go API server runs on port 8080.
@@ -37,9 +37,10 @@ instance.interceptors.response.use(
 )
 
 // Define the shape of our API client.
+// Note: The axios interceptor unwraps responses, so we return the data directly
 interface ApiClient {
   setDefaultHeader: (name: string, value: string) => void
-  login: (credentials: UserLoginRequest) => Promise<AuthResponse>
+  login: (credentials: UserLoginRequest) => Promise<{ user: User; token: string }>
   getCurrentUser: () => Promise<User>
 }
 

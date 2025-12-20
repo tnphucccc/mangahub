@@ -50,7 +50,7 @@ export function useAuth(): UseAuthReturn {
         try {
           const response = await mangaHubApi.getProfile();
           if (response.success && response.data) {
-            setUser(response.data.user);
+            setUser(response.data.user ?? null);
             setToken(existingToken);
           }
         } catch (err) {
@@ -71,7 +71,7 @@ export function useAuth(): UseAuthReturn {
     try {
       const response = await mangaHubApi.login(credentials);
       if (response.success && response.data) {
-        setUser(response.data.user);
+        setUser(response.data.user ?? null);
         setToken(response.data.token);
       }
     } catch (err: any) {
@@ -89,7 +89,7 @@ export function useAuth(): UseAuthReturn {
     try {
       const response = await mangaHubApi.register(data);
       if (response.success && response.data) {
-        setUser(response.data.user);
+        setUser(response.data.user ?? null);
         setToken(response.data.token);
       }
     } catch (err: any) {
@@ -154,7 +154,7 @@ export function useMangaSearch(): UseMangaSearchReturn {
     try {
       const response = await mangaHubApi.searchManga(params);
       if (response.success && response.data) {
-        setManga(response.data.items);
+        setManga(response.data.items ?? []);
         setTotal(response.meta?.total || 0);
         setHasMore(response.meta?.has_more || false);
       }
@@ -200,7 +200,7 @@ export function useManga(mangaId: string | null): UseMangaReturn {
     try {
       const response = await mangaHubApi.getManga(mangaId);
       if (response.success && response.data) {
-        setManga(response.data.manga);
+        setManga(response.data.manga ?? null);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch manga');
@@ -246,7 +246,7 @@ export function useLibrary(): UseLibraryReturn {
     try {
       const response = await mangaHubApi.getLibrary();
       if (response.success && response.data) {
-        setLibrary(response.data.items);
+        setLibrary(response.data?.items ?? []);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch library');
