@@ -1,0 +1,16 @@
+{
+  "id": "mangadex-123",
+  "title": "Golden Academia",
+  "author": "Eiichiro Oda",
+  "genres": [
+    "Supernatural",
+    "Sports",
+    "Horror"
+  ],
+  "status": "ongoing",
+  "total_chapters": 196,
+  "description": "An exciting Supernatural manga about golden academia.",
+  "cover_image_url": "https://via.placeholder.com/300x450?text=Golden+Academia",
+  "created_at": "0001-01-01T00:00:00Z",
+  "updated_at": "0001-01-01T00:00:00Z"
+}
