@@ -1,10 +1,10 @@
 import axios from 'axios'
 import type {
   UserLoginRequest,
-  AuthResponse,
+  UserRegisterRequest,
   User,
   APIError,
-} from '@mangahub/types'
+} from '../../../../packages/types/src'
 
 // Create an axios instance with a base URL.
 // The Go API server runs on port 8080.
@@ -40,7 +40,12 @@ instance.interceptors.response.use(
 // Note: The axios interceptor unwraps responses, so we return the data directly
 interface ApiClient {
   setDefaultHeader: (name: string, value: string) => void
-  login: (credentials: UserLoginRequest) => Promise<{ user: User; token: string }>
+  login: (
+    credentials: UserLoginRequest
+  ) => Promise<{ user: User; token: string }>
+  register: (
+    details: UserRegisterRequest
+  ) => Promise<{ user: User; token: string }>
   getCurrentUser: () => Promise<User>
 }
 
@@ -69,10 +74,19 @@ export const apiClient: ApiClient = {
     // The backend logic should be checked to confirm which one it uses.
     // For now, we assume the login request can handle the 'email' field as a username.
     const request: UserLoginRequest = {
-      username: credentials.username, // Mapping email to username
+      username: credentials.username,
       password: credentials.password,
     }
     return instance.post('/auth/login', request)
+  },
+
+  register: async (details) => {
+    const request: UserRegisterRequest = {
+      username: details.username,
+      email: details.email,
+      password: details.password,
+    }
+    return instance.post('/auth/register', request)
   },
 
   /**

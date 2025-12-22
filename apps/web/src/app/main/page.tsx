@@ -1,10 +1,11 @@
-"use client"
+'use client'
 
 import withAuth from '../hoc/withAuth'
 import { useAuth } from '../contexts/AuthContext'
 
 function Home() {
   const { user, logout } = useAuth()
+  console.log('Current user:', user)
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">
