@@ -1,67 +1,52 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/tnphucccc/mangahub/internal/udp"
+	"github.com/tnphucccc/mangahub/pkg/config"
 	"github.com/tnphucccc/mangahub/pkg/utils"
 )
 
 func main() {
 	// Load configuration
-	port := utils.GetEnv("UDP_PORT", "9091")
-
-	// Start UDP listener
-	addr := fmt.Sprintf(":%s", port)
-	udpAddr, err := net.ResolveUDPAddr("udp", addr)
+	configPath := utils.GetEnv("CONFIG_PATH", "./configs/dev.yaml")
+	cfg, err := config.LoadFromEnv(configPath)
 	if err != nil {
-		log.Fatalf("Failed to resolve UDP address: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	conn, err := net.ListenUDP("udp", udpAddr)
-	if err != nil {
-		log.Fatalf("Failed to start UDP listener: %v", err)
-	}
-	defer conn.Close()
+	log.Println("Starting UDP Notification Server...")
+	log.Printf("Configuration loaded from: %s", configPath)
 
-	log.Printf("UDP Notification Server listening on %s", addr)
+	// Create UDP notification server
+	server := udp.NewServer(cfg.Server.UDPPort)
+
+	// Start server
+	if err := server.Start(); err != nil {
+		log.Fatalf("Failed to start UDP server: %v", err)
+	}
+
+	log.Printf("UDP Notification Server started successfully")
+	log.Printf("Listening on port: %s", cfg.Server.UDPPort)
+	log.Printf("Waiting for client registrations...")
+	log.Printf("Ready to broadcast chapter release notifications")
 
 	// Handle graceful shutdown
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	go func() {
-		<-shutdown
-		log.Println("Shutting down UDP server...")
-		conn.Close()
-		os.Exit(0)
-	}()
+	// Wait for shutdown signal
+	<-shutdown
+	log.Println("Shutting down UDP server...")
 
-	// Buffer for incoming messages
-	buffer := make([]byte, 1024)
-
-	// Listen for messages
-	for {
-		n, clientAddr, err := conn.ReadFromUDP(buffer)
-		if err != nil {
-			log.Printf("Error reading UDP message: %v", err)
-			continue
-		}
-
-		// Handle message in goroutine
-		go handleMessage(conn, clientAddr, buffer[:n])
+	// Stop server
+	if err := server.Stop(); err != nil {
+		log.Printf("Error stopping server: %v", err)
 	}
-}
 
-func handleMessage(conn *net.UDPConn, addr *net.UDPAddr, data []byte) {
-	log.Printf("Received message from %s: %s", addr.String(), string(data))
-
-	// TODO: Implement notification protocol
-	// - Register client for notifications
-	// - Broadcast chapter release notifications
-	// - Handle client unregistration
+	log.Println("UDP server stopped")
 }

@@ -38,80 +38,112 @@ MangaHub
 ### Prerequisites
 
 - Go 1.19 or later
+- Node.js 18 or later
+- Yarn 4.0 or later
 - SQLite3
 - Git
 
-### Installation
+### Installation & Setup
 
-1. **Clone the repository**
+1.  **Clone the repository**
 
-   ```bash
-   git clone https://github.com/tnphucccc/mangahub.git
-   cd mangahub
-   ```
+    ```bash
+    git clone https://github.com/tnphucccc/mangahub.git
+    cd mangahub
+    ```
 
-2. **Install dependencies**
+2.  **Install Go dependencies**
 
-   ```bash
-   go mod download
-   ```
+    ```bash
+    go mod download
+    ```
 
-3. **Run database migrations**
+3.  **Install Node.js dependencies**
 
-   ```bash
-   make migrate-up
-   ```
+    ```bash
+    yarn install
+    ```
 
-4. **Seed the database**
-   ```bash
-   make seed-db
-   ```
+4.  **Run database migrations**
+    This will create the necessary tables in the SQLite database.
 
-### Running the Servers
+    ```bash
+    make migrate-up
+    ```
 
-**Option 1: Development (separate terminals)**
+5.  **Seed the database**
+    This will populate the database with initial manga data.
 
-```bash
-# Terminal 1 - HTTP API Server
-go run cmd/api-server/main.go
+    ```bash
+    make seed
+    ```
 
-# Terminal 2 - TCP Sync Server
-go run cmd/tcp-server/main.go
+### Running the Backend (Go Servers)
 
-# Terminal 3 - UDP Notification Server
-go run cmd/udp-server/main.go
-
-# Terminal 4 - gRPC Internal Service
-go run cmd/grpc-server/main.go
-```
-
-**Option 2: Production (Docker Compose)**
+The backend consists of four separate Go servers. You must run each in its own terminal. The `Makefile` provides the most convenient way to run them.
 
 ```bash
-docker-compose up
+# Terminal 1: API Server (HTTP REST API & WebSockets)
+make run-api
+
+# Terminal 2: TCP Server (Real-time Sync)
+make run-tcp
+
+# Terminal 3: UDP Server (Notifications)
+make run-udp
+
+# Terminal 4: gRPC Server (Internal Services)
+make run-grpc
 ```
+
+### Running the Frontend (Next.js Web App)
+
+The project includes a Next.js web application for the user interface.
+
+```bash
+# Run the web application in development mode
+make js-dev
+```
+
+Once started, the application will be available at [http://localhost:3000](http://localhost:3000).
 
 ### Using the CLI
 
-```bash
-# Build CLI tool
-go build -o mangahub cmd/cli/main.go
+The project includes a command-line interface (CLI) for interacting with the backend.
 
-# Register a new account
-./mangahub auth register --username johndoe --email john@example.com
+1.  **Build the CLI tool**
 
-# Login
-./mangahub auth login --username johndoe
+    ```bash
+    make build-cli
+    ```
 
-# Search for manga
-./mangahub manga search "one piece"
+2.  **Run the CLI**
+    You can see the available commands by running:
+    ```bash
+    ./bin/cli help
+    ```
+    This will output:
+    ```
+    MangaHub CLI - Manga Tracking System
 
-# Add manga to library
-./mangahub library add --manga-id one-piece --status reading
+    Usage:
+      mangahub <command> [options]
 
-# Update reading progress
-./mangahub progress update --manga-id one-piece --chapter 1095
-```
+    Commands:
+      version              Show version information
+      help                 Show this help message
+      init                 Initialize configuration
+      server               Manage servers (start, stop, status)
+      auth                 Authentication (register, login, logout)
+      manga                Manga operations (search, info, list)
+      library              Library management (add, remove, list)
+      progress             Progress tracking (update, history)
+      chat                 Chat system (join, send)
+
+    For more information on a command:
+      mangahub <command> help
+    ```
+    **Note:** Most CLI commands are currently not implemented and are for demonstration purposes only.
 
 ---
 
