@@ -3,6 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/auth"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/chat"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/config"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/library"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/manga"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/progress"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/server"
 )
 
 const version = "1.0.0-dev"
@@ -21,19 +29,19 @@ func main() {
 	case "help":
 		printUsage()
 	case "init":
-		initConfig()
+		config.InitConfig()
 	case "server":
-		handleServerCommand()
+		server.HandleServerCommand()
 	case "auth":
-		handleAuthCommand()
+		auth.HandleAuthCommand()
 	case "manga":
-		handleMangaCommand()
+		manga.HandleMangaCommand()
 	case "library":
-		handleLibraryCommand()
+		library.HandleLibraryCommand()
 	case "progress":
-		handleProgressCommand()
+		progress.HandleProgressCommand()
 	case "chat":
-		handleChatCommand()
+		chat.HandleChatCommand()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		printUsage()
@@ -50,7 +58,7 @@ func printUsage() {
 	fmt.Println("  help                 Show this help message")
 	fmt.Println("  init                 Initialize configuration")
 	fmt.Println("  server               Manage servers (start, stop, status)")
-	fmt.Println("  auth                 Authentication (register, login, logout)")
+	fmt.Println("  auth                 Authentication (register, login, logout, status)")
 	fmt.Println("  manga                Manga operations (search, info, list)")
 	fmt.Println("  library              Library management (add, remove, list)")
 	fmt.Println("  progress             Progress tracking (update, history)")
@@ -59,20 +67,9 @@ func printUsage() {
 	fmt.Println("  mangahub <command> help")
 }
 
-func initConfig() {
-	fmt.Println("Initializing MangaHub configuration...")
-	// TODO: Create config file at ~/.mangahub/config.yaml
-	fmt.Println("Configuration initialized successfully!")
-}
-
 func handleServerCommand() {
 	// TODO: Implement server management
 	fmt.Println("Server command - TODO")
-}
-
-func handleAuthCommand() {
-	// TODO: Implement authentication
-	fmt.Println("Auth command - TODO")
 }
 
 func handleMangaCommand() {
