@@ -193,7 +193,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: "#/components/schemas/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -250,7 +250,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageResponse"
+                $ref: "#/components/schemas/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -367,6 +367,15 @@ components:
             success:
               type: boolean
               example: false
+
+    SuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
 
     MessageResponse:
       allOf:
@@ -529,6 +538,8 @@ components:
                   type: array
                   items:
                     $ref: "#/components/schemas/Manga"
+            meta:
+              $ref: "#/components/schemas/Meta"
 
     MangaDetailResponse:
       allOf:
@@ -637,6 +648,8 @@ components:
                   type: array
                   items:
                     $ref: "#/components/schemas/UserProgressWithManga"
+            meta:
+              $ref: "#/components/schemas/Meta"
 
     ProgressResponse:
       allOf:

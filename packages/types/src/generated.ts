@@ -171,6 +171,10 @@ export interface components {
             /** @example false */
             success?: boolean;
         };
+        SuccessResponse: components["schemas"]["APIResponse"] & {
+            /** @example true */
+            success?: boolean;
+        };
         MessageResponse: components["schemas"]["APIResponse"] & {
             /** @example true */
             success?: boolean;
@@ -245,6 +249,7 @@ export interface components {
             data?: {
                 items?: components["schemas"]["Manga"][];
             };
+            meta?: components["schemas"]["Meta"];
         };
         MangaDetailResponse: components["schemas"]["APIResponse"] & {
             data?: {
@@ -284,6 +289,7 @@ export interface components {
             data?: {
                 items?: components["schemas"]["UserProgressWithManga"][];
             };
+            meta?: components["schemas"]["Meta"];
         };
         ProgressResponse: components["schemas"]["APIResponse"] & {
             data?: {
@@ -634,7 +640,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MessageResponse"];
+                    "application/json": components["schemas"]["SuccessResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -687,7 +693,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MessageResponse"];
+                    "application/json": components["schemas"]["SuccessResponse"];
                 };
             };
             400: components["responses"]["BadRequest"];

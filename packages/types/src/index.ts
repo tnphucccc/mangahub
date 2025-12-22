@@ -9,7 +9,7 @@
  * Or from project root:
  *   make generate-types
  *
- * Generated: 2025-12-20T18:27:23.214Z
+ * Generated: 2025-12-22T18:39:36.189Z
  */
 
 // Re-export all generated types
