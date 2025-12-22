@@ -25,7 +25,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	fmt.Println("=== MangaHub gRPC Service Test ===\n")
+	fmt.Println("=== MangaHub gRPC Service Test ===")
 
 	// Test 1: Get manga by ID
 	fmt.Println("1. Getting Manga by ID:")

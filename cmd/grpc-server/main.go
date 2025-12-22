@@ -44,7 +44,7 @@ func main() {
 	grpcService := grpchandler.NewServer(mangaService)
 
 	// Start gRPC listener
-	addr := fmt.Sprintf(":%d", cfg.Server.GRPCPort)
+	addr := fmt.Sprintf(":%s", cfg.Server.GRPCPort)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("Failed to start gRPC listener on %s: %v", addr, err)
