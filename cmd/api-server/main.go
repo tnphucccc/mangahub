@@ -16,6 +16,7 @@ import (
 	"github.com/tnphucccc/mangahub/internal/auth"
 	"github.com/tnphucccc/mangahub/internal/manga"
 	"github.com/tnphucccc/mangahub/internal/middleware"
+	"github.com/tnphucccc/mangahub/internal/stats"
 	"github.com/tnphucccc/mangahub/internal/user"
 	"github.com/tnphucccc/mangahub/internal/websocket"
 	"github.com/tnphucccc/mangahub/pkg/config"
@@ -66,14 +67,17 @@ func main() {
 	// Initialize repositories
 	userRepo := user.NewRepository(db)
 	mangaRepo := manga.NewRepository(db)
+	statsRepo := stats.NewRepository(db)
 
 	// Initialize services
 	userService := user.NewService(userRepo, jwtManager)
 	mangaService := manga.NewService(mangaRepo)
+	statsService := stats.NewService(statsRepo)
 
 	// Initialize handlers
 	userHandler := user.NewHandler(userService)
 	mangaHandler := manga.NewHandler(mangaService)
+	statsHandler := stats.NewHandler(statsService)
 
 	// Initialize WebSocket hub and run it
 	wsHub := websocket.NewHub()
@@ -134,6 +138,7 @@ func main() {
 			userRoutes.POST("/library", mangaHandler.AddToLibrary)             // Add manga to library
 			userRoutes.GET("/progress/:manga_id", mangaHandler.GetProgress)    // Get progress for manga
 			userRoutes.PUT("/progress/:manga_id", mangaHandler.UpdateProgress) // Update reading progress
+			userRoutes.GET("/stats", statsHandler.GetStats)                    // Get user statistics
 		}
 	}
 

@@ -31,7 +31,14 @@ type AuthResponse struct {
 	Token string `json:"token"`
 }
 
+// ErrorDetail represents the detailed error information.
+type ErrorDetail struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
 // ErrorResponse represents a generic error response from the API.
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
