@@ -115,7 +115,7 @@ func libraryAdd() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}
@@ -165,7 +165,7 @@ func libraryList() {
 		}
 
 		if !apiResp.Success {
-			fmt.Printf("❌ Failed to list library: %s\n", apiResp.Error.Error)
+			fmt.Printf("❌ Failed to list library: %s\n", apiResp.Error.Message)
 			os.Exit(1)
 		}
 
@@ -195,7 +195,7 @@ func libraryList() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}

@@ -84,7 +84,7 @@ func mangaSearch() {
 		}
 
 		if !apiResp.Success {
-			fmt.Printf("❌ Manga search failed: %s\n", apiResp.Error.Error)
+			fmt.Printf("❌ Manga search failed: %s\n", apiResp.Error.Message)
 			os.Exit(1)
 		}
 
@@ -108,7 +108,7 @@ func mangaSearch() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}
@@ -150,7 +150,7 @@ func mangaGet() {
 		}
 
 		if !apiResp.Success {
-			fmt.Printf("❌ Failed to get manga: %s\n", apiResp.Error.Error)
+			fmt.Printf("❌ Failed to get manga: %s\n", apiResp.Error.Message)
 			os.Exit(1)
 		}
 
@@ -175,7 +175,7 @@ func mangaGet() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}
@@ -226,7 +226,7 @@ func mangaGetAll() {
 		}
 
 		if !apiResp.Success {
-			fmt.Printf("❌ Failed to get all manga: %s\n", apiResp.Error.Error)
+			fmt.Printf("❌ Failed to get all manga: %s\n", apiResp.Error.Message)
 			os.Exit(1)
 		}
 
@@ -250,7 +250,7 @@ func mangaGetAll() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}

@@ -111,7 +111,7 @@ func progressUpdate() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}

@@ -110,7 +110,7 @@ func authRegister() {
 		}
 
 		if !apiResp.Success {
-			fmt.Printf("❌ Registration failed: %s\n", apiResp.Error.Error)
+			fmt.Printf("❌ Registration failed: %s\n", apiResp.Error.Message)
 			os.Exit(1)
 		}
 
@@ -130,7 +130,7 @@ func authRegister() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}
@@ -186,7 +186,7 @@ func authLogin() {
 		}
 
 		if !apiResp.Success {
-			fmt.Printf("❌ Login failed: %s\n", apiResp.Error.Error)
+			fmt.Printf("❌ Login failed: %s\n", apiResp.Error.Message)
 			os.Exit(1)
 		}
 
@@ -206,7 +206,7 @@ func authLogin() {
 			fmt.Printf("Error decoding API error response: %v\n", err)
 			os.Exit(1)
 		}
-		errMsg := apiResp.Error.Error
+		errMsg := apiResp.Error.Message
 		if errMsg == "" {
 			errMsg = fmt.Sprintf("API returned status %d", resp.StatusCode)
 		}

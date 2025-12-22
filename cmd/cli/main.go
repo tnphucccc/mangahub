@@ -11,6 +11,7 @@ import (
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/manga"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/progress"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/server"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/stats"
 )
 
 const version = "1.0.0-dev"
@@ -42,6 +43,8 @@ func main() {
 		progress.HandleProgressCommand()
 	case "chat":
 		chat.HandleChatCommand()
+	case "stats":
+		stats.HandleStatsCommand()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		printUsage()
@@ -63,6 +66,7 @@ func printUsage() {
 	fmt.Println("  library              Library management (add, remove, list)")
 	fmt.Println("  progress             Progress tracking (update, history)")
 	fmt.Println("  chat                 Chat system (join, send)")
+	fmt.Println("  stats                User statistics (view)")
 	fmt.Println("\nFor more information on a command:")
 	fmt.Println("  mangahub <command> help")
 }
