@@ -3,6 +3,7 @@ package manga
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tnphucccc/mangahub/pkg/models"
@@ -117,6 +118,16 @@ func (h *Handler) AddToLibrary(c *gin.Context) {
 			return
 		}
 
+		if strings.HasPrefix(err.Error(), "invalid chapter number") {
+			response.BadRequest(c, err.Error())
+			return
+		}
+
+		if err.Error() == "manga already in library" {
+			response.Conflict(c, "Manga already in library")
+			return
+		}
+
 		response.InternalError(c, "Failed to add manga to library")
 		return
 	}
@@ -154,8 +165,8 @@ func (h *Handler) UpdateProgress(c *gin.Context) {
 			return
 		}
 
-		if err.Error() == "invalid chapter number" {
-			response.BadRequest(c, "Invalid chapter number")
+		if strings.HasPrefix(err.Error(), "invalid chapter number") {
+			response.BadRequest(c, err.Error())
 			return
 		}
 

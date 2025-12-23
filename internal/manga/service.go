@@ -68,9 +68,23 @@ func (s *Service) GetUserLibrary(userID string) ([]models.UserProgressWithManga,
 // AddToLibrary adds a manga to user's library
 func (s *Service) AddToLibrary(userID string, req models.LibraryAddRequest) error {
 	// Verify manga exists
-	_, err := s.repo.FindByID(req.MangaID)
+	manga, err := s.repo.FindByID(req.MangaID)
 	if err != nil {
 		return fmt.Errorf("manga not found")
+	}
+
+	// Check if already in library
+	if _, err := s.repo.GetProgress(userID, req.MangaID); err == nil {
+		return fmt.Errorf("manga already in library")
+	}
+
+	// Validate chapter number
+	// If TotalChapters is 0, it means "n/a" (unknown), so we allow any chapter number.
+	if req.CurrentChapter < 0 {
+		return fmt.Errorf("invalid chapter number: cannot be negative")
+	}
+	if manga.TotalChapters > 0 && req.CurrentChapter > manga.TotalChapters {
+		return fmt.Errorf("invalid chapter number: exceeds total chapters (%d)", manga.TotalChapters)
 	}
 
 	// Add to library
@@ -89,14 +103,30 @@ func (s *Service) UpdateProgress(userID, mangaID string, req models.ProgressUpda
 		return fmt.Errorf("manga not found")
 	}
 
-	if req.CurrentChapter == nil {
-		return fmt.Errorf("current_chapter is required")
+	// Get existing progress (needed for partial updates and validation)
+	existingProgress, err := s.repo.GetProgress(userID, mangaID)
+	if err != nil {
+		return fmt.Errorf("manga not in user's library")
 	}
-	currentChapter := *req.CurrentChapter
 
-	// Validate chapter number
-	if currentChapter < 0 || (manga.TotalChapters > 0 && currentChapter > manga.TotalChapters) {
-		return fmt.Errorf("invalid chapter number")
+	// Determine new chapter
+	currentChapter := existingProgress.CurrentChapter
+	if req.CurrentChapter != nil {
+		currentChapter = *req.CurrentChapter
+
+		// Validate chapter number
+		if manga.TotalChapters <= 0 {
+			if currentChapter > 0 {
+				return fmt.Errorf("invalid chapter number: cannot update chapter progress when total chapters is N/A")
+			}
+		} else {
+			if currentChapter < 0 {
+				return fmt.Errorf("invalid chapter number: cannot be negative")
+			}
+			if currentChapter > manga.TotalChapters {
+				return fmt.Errorf("invalid chapter number: exceeds total chapters (%d)", manga.TotalChapters)
+			}
+		}
 	}
 
 	// Update progress

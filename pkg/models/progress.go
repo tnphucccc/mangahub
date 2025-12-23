@@ -22,7 +22,7 @@ type UserProgress struct {
 	MangaID        string        `json:"manga_id" db:"manga_id"`
 	CurrentChapter int           `json:"current_chapter" db:"current_chapter"`
 	Status         ReadingStatus `json:"status" db:"status"`
-	Rating         sql.NullInt64 `json:"rating" db:"rating"` // Can be NULL
+	Rating         *int          `json:"rating" db:"rating"` // Can be NULL
 	StartedAt      sql.NullTime  `json:"started_at" db:"started_at"`
 	CompletedAt    sql.NullTime  `json:"completed_at" db:"completed_at"`
 	UpdatedAt      time.Time     `json:"updated_at" db:"updated_at"`
@@ -36,7 +36,7 @@ type UserProgressWithManga struct {
 
 // ProgressUpdateRequest represents data for updating reading progress
 type ProgressUpdateRequest struct {
-	CurrentChapter *int           `json:"current_chapter" binding:"required,min=0"`
+	CurrentChapter *int           `json:"current_chapter"`
 	Status         *ReadingStatus `json:"status"`
 	Rating         *int           `json:"rating" binding:"omitempty,min=1,max=10"`
 }
@@ -60,8 +60,8 @@ type ProgressSyncMessage struct {
 
 // GetRatingValue safely returns the rating value or 0 if NULL
 func (p *UserProgress) GetRatingValue() int {
-	if p.Rating.Valid {
-		return int(p.Rating.Int64)
+	if p.Rating != nil {
+		return *p.Rating
 	}
 	return 0
 }
