@@ -6,6 +6,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { apiClient, GetMangaParams } from '../../lib/apiClient'
 import type { Manga, MangaStatus } from '../../../../../packages/types/src'
 import MangaCard from '../../component/mangaCard'
+import Header from '../../component/header'
+import MangaModal from '../../component/mangaModal'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 // A simple debounce hook
 function useDebounce(value: string, delay: number) {
@@ -28,22 +32,29 @@ const SearchAndFilter = ({
     searchTerm: string
     status: MangaStatus | ''
     genre: string
+    limit: number
   }) => void
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [status, setStatus] = useState<MangaStatus | ''>('')
   const [genre, setGenre] = useState('')
+  const [limit, setLimit] = useState(10)
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
   const debouncedGenre = useDebounce(genre, 500)
 
   useEffect(() => {
-    onSearch({ searchTerm: debouncedSearchTerm, status, genre: debouncedGenre })
-  }, [debouncedSearchTerm, status, debouncedGenre, onSearch])
+    onSearch({
+      searchTerm: debouncedSearchTerm,
+      status,
+      genre: debouncedGenre,
+      limit,
+    })
+  }, [debouncedSearchTerm, status, debouncedGenre, limit, onSearch])
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <input
           type="text"
           placeholder="Search by title..."
@@ -69,30 +80,17 @@ const SearchAndFilter = ({
           onChange={(e) => setGenre(e.target.value)}
           className="p-2 border rounded-md text-black"
         />
+        <select
+          value={limit}
+          onChange={(e) => setLimit(Number(e.target.value))}
+          className="p-2 border rounded-md text-black"
+        >
+          <option value="10">10 items per page</option>
+          <option value="20">20 items per page</option>
+          <option value="30">30 items per page</option>
+        </select>
       </div>
     </div>
-  )
-}
-
-const Header = () => {
-  const { user, logout } = useAuth()
-  return (
-    <header className="w-full bg-white shadow-md">
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-gray-900">MangaHub</h1>
-        <div className="flex items-center">
-          <p className="text-gray-600 mr-4">
-            Welcome, {user?.username || 'User'}
-          </p>
-          <button
-            onClick={logout}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    </header>
   )
 }
 
@@ -101,6 +99,9 @@ function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // State for modal
+  const [selectedManga, setSelectedManga] = useState<Manga | null>(null)
+
   // State for pagination and filtering
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -108,8 +109,8 @@ function HomePage() {
     searchTerm: '',
     status: '' as MangaStatus | '',
     genre: '',
+    limit: 10,
   })
-  const MANGA_PER_PAGE = 10
 
   const fetchManga = useCallback(async () => {
     try {
@@ -118,13 +119,12 @@ function HomePage() {
         title: filters.searchTerm,
         status: filters.status || undefined,
         genre: filters.genre || undefined,
-        limit: MANGA_PER_PAGE,
-        offset: (currentPage - 1) * MANGA_PER_PAGE,
+        limit: filters.limit,
+        offset: (currentPage - 1) * filters.limit,
       }
       const response = await apiClient.getManga(params)
-      console.log('Fetched manga:', response)
       setMangaList(response.data.items || [])
-      setTotalPages(Math.ceil((response.meta?.total || 0) / MANGA_PER_PAGE))
+      setTotalPages(Math.ceil((response.meta?.total || 0) / filters.limit))
     } catch (err: any) {
       setError(err.message || 'Failed to fetch manga.')
       console.error(err)
@@ -142,6 +142,25 @@ function HomePage() {
     setFilters(newFilters)
   }, [])
 
+  const handleCardClick = (manga: Manga) => {
+    setSelectedManga(manga)
+  }
+
+  const handleCloseModal = () => {
+    setSelectedManga(null)
+  }
+
+  const handleAddToLibrary = async (mangaId: string) => {
+    try {
+      await apiClient.addToLibrary(mangaId)
+      toast.success('Manga added to your library!')
+      handleCloseModal() // Close modal after adding
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add manga to library.')
+      console.error('Add to library error:', err)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
@@ -153,14 +172,18 @@ function HomePage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               {mangaList.map((manga) => (
-                <MangaCard key={manga.id} manga={manga} />
+                <MangaCard
+                  key={manga.id}
+                  manga={manga}
+                  onClick={() => handleCardClick(manga)}
+                />
               ))}
             </div>
             <div className="mt-8 flex justify-center items-center space-x-4">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 bg-indigo-600 rounded-md disabled:bg-gray-400 text-black"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:bg-gray-400"
               >
                 Previous
               </button>
@@ -172,7 +195,7 @@ function HomePage() {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-4 py-2 bg-indigo-600 text-black rounded-md disabled:bg-gray-400"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:bg-gray-400"
               >
                 Next
               </button>
@@ -182,6 +205,22 @@ function HomePage() {
           !loading && <p className="text-center">No manga found.</p>
         )}
       </main>
+      <MangaModal
+        manga={selectedManga}
+        onClose={handleCloseModal}
+        onAddToLibrary={handleAddToLibrary}
+      />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   )
 }

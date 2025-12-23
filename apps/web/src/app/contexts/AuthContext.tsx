@@ -39,7 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout()
     } finally {
       setLoading(false)
-      router.push('/main')
     }
   }
 
@@ -65,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', newToken)
     setToken(newToken)
     await fetchUser(newToken)
+    router.push('/main') // Redirect after successful login
   }
 
   const logout = () => {

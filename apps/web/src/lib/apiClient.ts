@@ -7,6 +7,10 @@ import type {
   APIError,
   MangaStatus,
   Meta,
+  LibraryAddRequest,
+  APIResponse,
+  UserProgressWithManga,
+  ProgressUpdateRequest,
 } from '../../../../packages/types/src'
 
 // Create an axios instance with a base URL.
@@ -57,15 +61,25 @@ interface ApiClient {
       user: User
       token: string
     }
-    sucess: boolean
+    success: boolean
   }>
   register: (
     details: UserRegisterRequest
-  ) => Promise<{ data: { user: User; token: string }; sucess: boolean }>
-  getCurrentUser: () => Promise<{ data: { user: User }; sucess: boolean }>
+  ) => Promise<{ data: { user: User; token: string }; success: boolean }>
+  getCurrentUser: () => Promise<{ data: { user: User }; success: boolean }>
   getManga: (
     params: GetMangaParams
-  ) => Promise<{ data: { items: Manga[] }; meta: Meta; sucess: boolean }>
+  ) => Promise<{ data: { items: Manga[] }; meta: Meta; success: boolean }>
+  addToLibrary: (mangaId: string) => Promise<APIResponse>
+  getLibrary: () => Promise<{
+    data: { items: UserProgressWithManga[] }
+    meta: Meta
+    success: boolean
+  }>
+  updateMangaProgress: (
+    mangaId: string,
+    data: ProgressUpdateRequest
+  ) => Promise<APIResponse>
 }
 
 // Implement the ApiClient.
@@ -100,7 +114,6 @@ export const apiClient: ApiClient = {
   },
 
   getManga: async (params) => {
-    // The endpoint for searching is /manga, not /manga/all
     const endpoint = '/manga'
 
     // Create a query string from the params object
@@ -115,5 +128,22 @@ export const apiClient: ApiClient = {
     const queryString = queryParams.toString()
 
     return instance.get(`${endpoint}${queryString ? `?${queryString}` : ''}`)
+  },
+
+  addToLibrary: async (mangaId: string) => {
+    const request: LibraryAddRequest = {
+      manga_id: mangaId,
+      status: 'plan_to_read', // Default status when adding to library
+      current_chapter: 0,
+    }
+    return instance.post('/users/library', request)
+  },
+
+  getLibrary: async () => {
+    return instance.get('/users/library')
+  },
+
+  updateMangaProgress: async (mangaId, data) => {
+    return instance.put(`/users/progress/${mangaId}`, data)
   },
 }

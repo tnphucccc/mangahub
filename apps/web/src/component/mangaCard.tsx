@@ -3,11 +3,19 @@ import type { Manga } from '../../../../packages/types/src'
 import defaultCover from '@/../public/assets/bookcover_cover.png'
 import { upperCaseFirstLetter } from '@/app/helpers/upperCaseFirstLetter'
 
-const MangaCard = ({ manga }: { manga: Manga }) => {
+interface MangaCardProps {
+  manga: Manga
+  onClick: () => void
+}
+
+const MangaCard = ({ manga, onClick }: MangaCardProps) => {
   // Use a placeholder if the cover image is missing
   const coverImage = defaultCover.src
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
+    <button
+      onClick={onClick}
+      className="bg-white rounded-lg shadow-md overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer text-left w-full"
+    >
       <img
         src={coverImage}
         alt={`Cover for ${manga.title}`}
@@ -28,16 +36,16 @@ const MangaCard = ({ manga }: { manga: Manga }) => {
             manga.status === 'ongoing'
               ? 'bg-blue-200 text-blue-800'
               : manga.status === 'completed'
-                ? 'bg-green-200 text-green-800'
-                : manga.status === 'hiatus'
-                  ? 'bg-yellow-200 text-yellow-800'
-                  : 'bg-red-200 text-red-800'
+              ? 'bg-green-200 text-green-800'
+              : manga.status === 'hiatus'
+              ? 'bg-yellow-200 text-yellow-800'
+              : 'bg-red-200 text-red-800'
           }`}
         >
           {upperCaseFirstLetter(manga.status || 'unknown')}
         </span>
       </div>
-    </div>
+    </button>
   )
 }
 
