@@ -287,15 +287,16 @@ func TestGRPCToModelConversion_ProgressUpdate(t *testing.T) {
 	// Simulate conversion
 	status := models.ReadingStatus(grpcReq.Status)
 	rating := int(grpcReq.Rating)
+	chapter := int(grpcReq.Chapter)
 
 	updateReq := models.ProgressUpdateRequest{
-		CurrentChapter: int(grpcReq.Chapter),
+		CurrentChapter: &chapter,
 		Status:         &status,
 		Rating:         &rating,
 	}
 
-	if updateReq.CurrentChapter != int(grpcReq.Chapter) {
-		t.Errorf("Expected chapter %d, got %d", grpcReq.Chapter, updateReq.CurrentChapter)
+	if *updateReq.CurrentChapter != int(grpcReq.Chapter) {
+		t.Errorf("Expected chapter %d, got %d", grpcReq.Chapter, *updateReq.CurrentChapter)
 	}
 
 	if *updateReq.Status != models.ReadingStatus(grpcReq.Status) {

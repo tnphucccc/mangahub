@@ -90,15 +90,16 @@ func TestMangaStatus_Constants(t *testing.T) {
 func TestProgressUpdateRequest(t *testing.T) {
 	status := models.ReadingStatusReading
 	rating := 8
+	chapter := 50
 
 	req := models.ProgressUpdateRequest{
-		CurrentChapter: 50,
+		CurrentChapter: &chapter,
 		Status:         &status,
 		Rating:         &rating,
 	}
 
-	if req.CurrentChapter != 50 {
-		t.Errorf("Expected chapter 50, got %d", req.CurrentChapter)
+	if *req.CurrentChapter != 50 {
+		t.Errorf("Expected chapter 50, got %d", *req.CurrentChapter)
 	}
 
 	if *req.Status != models.ReadingStatusReading {
@@ -164,9 +165,9 @@ func TestUserProgress_SafeGetters(t *testing.T) {
 		t.Errorf("Expected rating 0 for invalid, got %d", rating)
 	}
 
-	// Set rating using sql.NullInt64
-	progress.Rating.Int64 = 8
-	progress.Rating.Valid = true
+	// Set rating using *int
+	val := 8
+	progress.Rating = &val
 	rating = progress.GetRatingValue()
 	if rating != 8 {
 		t.Errorf("Expected rating 8, got %d", rating)
