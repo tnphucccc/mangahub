@@ -26,43 +26,23 @@ func (s *Service) GetByID(id string) (*models.Manga, error) {
 }
 
 // Search searches for manga
-func (s *Service) Search(query models.MangaSearchQuery) ([]models.Manga, error) {
-	// Set default limit if not specified
-	if query.Limit == 0 {
-		query.Limit = 20
-	}
-
-	// Limit maximum results
-	if query.Limit > 100 {
-		query.Limit = 100
-	}
-
-	mangaList, err := s.repo.Search(query)
+func (s *Service) Search(query models.MangaSearchQuery) ([]models.Manga, int, error) {
+	mangaList, total, err := s.repo.Search(query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search manga: %w", err)
+		return nil, 0, fmt.Errorf("failed to search manga: %w", err)
 	}
 
-	return mangaList, nil
+	return mangaList, total, nil
 }
 
-// GetAll retrieves all manga with pagination
-func (s *Service) GetAll(limit, offset int) ([]models.Manga, error) {
-	// Set default limit if not specified
-	if limit == 0 {
-		limit = 20
-	}
-
-	// Limit maximum results
-	if limit > 100 {
-		limit = 100
-	}
-
-	mangaList, err := s.repo.FindAll(limit, offset)
+// GetAll retrieves all manga
+func (s *Service) GetAll(limit, offset int) ([]models.Manga, int, error) {
+	mangaList, total, err := s.repo.FindAll(limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get manga: %w", err)
+		return nil, 0, fmt.Errorf("failed to get manga: %w", err)
 	}
 
-	return mangaList, nil
+	return mangaList, total, nil
 }
 
 // GetUserLibrary retrieves a user's manga library

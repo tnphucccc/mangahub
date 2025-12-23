@@ -31,18 +31,14 @@ func (h *Handler) Search(c *gin.Context) {
 	}
 
 	// Search manga
-	mangaList, err := h.service.Search(query)
+	mangaList, total, err := h.service.Search(query)
 	if err != nil {
 		response.InternalError(c, "Failed to search manga")
 		return
 	}
 
-	// Use pagination response for consistency
-	response.SuccessWithMeta(c, http.StatusOK, gin.H{"items": mangaList}, &response.Meta{
-		Count:  len(mangaList),
-		Limit:  query.Limit,
-		Offset: query.Offset,
-	})
+	// Use paginated response
+	response.Paginated(c, mangaList, total, query.Limit, query.Offset)
 }
 
 // GetByID retrieves a manga by ID
@@ -62,20 +58,16 @@ func (h *Handler) GetByID(c *gin.Context) {
 // GetAll retrieves all manga with pagination
 // GET /manga/all?limit=20&offset=0
 func (h *Handler) GetAll(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "0"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
-	mangaList, err := h.service.GetAll(limit, offset)
+	mangaList, total, err := h.service.GetAll(limit, offset)
 	if err != nil {
 		response.InternalError(c, "Failed to get manga")
 		return
 	}
 
-	response.SuccessWithMeta(c, http.StatusOK, gin.H{"items": mangaList}, &response.Meta{
-		Count:  len(mangaList),
-		Limit:  limit,
-		Offset: offset,
-	})
+	response.Paginated(c, mangaList, total, limit, offset)
 }
 
 // GetLibrary retrieves user's manga library

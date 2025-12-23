@@ -59,8 +59,9 @@ generate-types: ## Generate TypeScript types from OpenAPI spec
 
 generate-proto: ## Generate Go code from Protocol Buffers
 	@echo "Generating gRPC code..."
-	protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	mkdir -p internal/grpc/pb
+	protoc --proto_path=proto --go_out=internal/grpc/pb --go_opt=paths=source_relative \
+		--go-grpc_out=internal/grpc/pb --go-grpc_opt=paths=source_relative \
 		proto/manga.proto
 	@echo "Proto files generated"
 
@@ -71,13 +72,16 @@ generate: generate-proto generate-types ## Generate all code
 # ==========================================
 
 migrate-up: ## Run database migrations
-	go run ./scripts/migrate.go up
+	go run ./scripts/migrate/main.go up
 
 migrate-down: ## Rollback database migrations
-	go run ./scripts/migrate.go down
+	go run ./scripts/migrate/main.go down
 
 seed: ## Seed database with sample data
-	go run ./scripts/seed.go
+	go run ./scripts/seed/main.go
+
+generate-data: ## Crawl MangaDex and generate manga JSON
+	go run ./scripts/generate_data/main.go
 
 db-reset: migrate-down migrate-up seed ## Reset database and reseed
 

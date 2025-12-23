@@ -31,6 +31,7 @@ message SearchRequest {
 
 message SearchResponse {
     repeated MangaResponse manga = 1;
+    int32 total = 2;
 }
 
 message UserProgress {

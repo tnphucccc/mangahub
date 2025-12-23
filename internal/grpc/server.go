@@ -61,7 +61,7 @@ func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 		Limit:  int(req.GetLimit()),
 		Offset: int(req.GetOffset()),
 	}
-	mangas, err := s.mangaService.Search(query)
+	mangas, total, err := s.mangaService.Search(query)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to search manga: %v", err)
 	}
@@ -71,7 +71,10 @@ func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 		mangaResponses = append(mangaResponses, toMangaResponse(&m))
 	}
 
-	return &pb.SearchResponse{Manga: mangaResponses}, nil
+	return &pb.SearchResponse{
+		Manga: mangaResponses,
+		Total: int32(total),
+	}, nil
 }
 
 // UpdateProgress updates the user's reading progress for a manga.
