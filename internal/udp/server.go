@@ -113,9 +113,32 @@ func (s *Server) handleMessage(addr *net.UDPAddr, data []byte) {
 		s.handleUnregister(addr, msg)
 	case models.UDPMessageTypePing:
 		s.handlePing(addr, msg)
+	case models.UDPMessageTypeNotification:
+		s.handleNotification(addr, msg)
 	default:
 		s.sendError(addr, "UNKNOWN_MESSAGE_TYPE", fmt.Sprintf("Unknown message type: %s", msg.Type))
 	}
+}
+
+// handleNotification handles incoming notification messages (from API server)
+func (s *Server) handleNotification(addr *net.UDPAddr, msg models.UDPMessage) {
+	// Parse notification data
+	notificationDataBytes, err := json.Marshal(msg.Data)
+	if err != nil {
+		log.Printf("Invalid notification data from %s: %v", addr.String(), err)
+		return
+	}
+
+	var notification models.UDPNotification
+	if err := json.Unmarshal(notificationDataBytes, &notification); err != nil {
+		log.Printf("Failed to unmarshal notification from %s: %v", addr.String(), err)
+		return
+	}
+
+	log.Printf("Received notification request from %s for: %s", addr.String(), notification.MangaTitle)
+	
+	// Broadcast to all registered clients
+	s.BroadcastNotification(notification)
 }
 
 // handleRegister handles client registration
