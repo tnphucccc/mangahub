@@ -2,18 +2,28 @@ package manga
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/tnphucccc/mangahub/internal/user"
 	"github.com/tnphucccc/mangahub/pkg/models"
 )
 
 // Service handles manga business logic
 type Service struct {
-	repo *Repository
+	repo                *Repository
+	userRepo            *user.Repository
+	TCPBroadcastChan    chan models.TCPProgressBroadcast
+	UDPNotificationChan chan models.UDPNotification
 }
 
 // NewService creates a new manga service
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, userRepo *user.Repository) *Service {
+	return &Service{
+		repo:                repo,
+		userRepo:            userRepo,
+		TCPBroadcastChan:    make(chan models.TCPProgressBroadcast, 100),
+		UDPNotificationChan: make(chan models.UDPNotification, 100),
+	}
 }
 
 // GetByID retrieves a manga by ID
@@ -79,17 +89,53 @@ func (s *Service) UpdateProgress(userID, mangaID string, req models.ProgressUpda
 		return fmt.Errorf("manga not found")
 	}
 
+	if req.CurrentChapter == nil {
+		return fmt.Errorf("current_chapter is required")
+	}
+	currentChapter := *req.CurrentChapter
+
 	// Validate chapter number
-	if req.CurrentChapter < 0 || req.CurrentChapter > manga.TotalChapters {
+	if currentChapter < 0 || (manga.TotalChapters > 0 && currentChapter > manga.TotalChapters) {
 		return fmt.Errorf("invalid chapter number")
 	}
 
 	// Update progress
-	if err := s.repo.UpdateProgress(userID, mangaID, req.CurrentChapter, req.Status, req.Rating); err != nil {
+	if err := s.repo.UpdateProgress(userID, mangaID, currentChapter, req.Status, req.Rating); err != nil {
 		return fmt.Errorf("failed to update progress: %w", err)
 	}
 
+	// Fetch username for broadcast
+	username := "User"
+	if s.userRepo != nil {
+		if u, err := s.userRepo.FindByID(userID); err == nil {
+			username = u.Username
+		}
+	}
+
+	// Trigger TCP broadcast for real-time sync
+	s.TCPBroadcastChan <- models.TCPProgressBroadcast{
+		UserID:         userID,
+		Username:       username,
+		MangaID:        mangaID,
+		MangaTitle:     manga.Title,
+		CurrentChapter: currentChapter,
+		Status:         derefStatus(req.Status),
+		Timestamp:      time.Now(),
+	}
+
 	return nil
+}
+
+func derefStatus(s *models.ReadingStatus) models.ReadingStatus {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// NotifyNotification sends a UDP notification (triggered by admin)
+func (s *Service) NotifyNotification(notification models.UDPNotification) {
+	s.UDPNotificationChan <- notification
 }
 
 // GetProgress retrieves user's progress for a specific manga

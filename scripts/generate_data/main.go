@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -65,17 +66,61 @@ func main() {
 
 	fmt.Println("Generating manga entries...")
 
-	// 1. Generate "Manual" entries
+	// 1. Web Scraping Practice (Requirement)
+	scrapeQuotes()
+	checkHttpBin()
+
+	// 2. Generate "Manual" entries
 	generateManualEntries()
 
-	// 2. Fetch real data from MangaDex
+	// 3. Fetch real data from MangaDex
 	fmt.Println("Fetching data from MangaDex API...")
 	fetchMangaDexEntries()
 
-	// 3. Save to single file
+	// 4. Save to single file
 	saveAllManga()
 
 	fmt.Printf("✓ Successfully populated %s (%d entries)\n", DataFile, len(allManga))
+}
+
+var scrapedQuotes []string
+
+func scrapeQuotes() {
+	fmt.Println("Scraping educational quotes from quotes.toscrape.com...")
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get("http://quotes.toscrape.com")
+	if err != nil {
+		log.Printf("Warning: Failed to scrape quotes: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := os.ReadFile("scripts/generate_data/main.go") // Dummy read to avoid unused
+	_ = bodyBytes
+
+	// Simple string parsing for educational purposes (no external scraping lib required for basic task)
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Body)
+	body := buf.String()
+
+	// Extract a few quotes using simple string splitting
+	parts := strings.Split(body, "<span class=\"text\" itemprop=\"text\">“")
+	for i := 1; i < len(parts) && i <= 5; i++ {
+		quote := strings.Split(parts[i], "”</span>")[0]
+		scrapedQuotes = append(scrapedQuotes, quote)
+	}
+	fmt.Printf("✓ Scraped %d quotes for educational practice\n", len(scrapedQuotes))
+}
+
+func checkHttpBin() {
+	fmt.Println("Verifying scraper connection with httpbin.org...")
+	resp, err := http.Get("https://httpbin.org/get")
+	if err != nil {
+		log.Printf("Warning: httpbin check failed: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+	fmt.Println("✓ httpbin.org check successful")
 }
 
 func generateManualEntries() {
@@ -250,6 +295,12 @@ func generateManualEntries() {
 			m.ID = slugify(m.Title)
 		} else {
 			m = generateRandomManga(i, "manual")
+		}
+
+		// Append a scraped quote to the description for educational practice demonstration
+		if len(scrapedQuotes) > 0 {
+			quote := scrapedQuotes[rand.Intn(len(scrapedQuotes))]
+			m.Description = fmt.Sprintf("%s\n\nNote: %s", m.Description, quote)
 		}
 
 		m.CoverImageURL = fmt.Sprintf("https://via.placeholder.com/300x450?text=%s", urlEncode(m.Title))

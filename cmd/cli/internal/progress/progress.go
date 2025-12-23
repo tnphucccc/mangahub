@@ -55,9 +55,40 @@ func progressUpdate() {
 	}
 
 	mangaID := os.Args[3]
-	reqBody := climodels.ProgressUpdateRequest{}
-	var rating *int
 
+	// 1. Fetch current progress to get status if not provided
+	currentStatus := ""
+	apiURL := fmt.Sprintf("http://%s:%d/api/v1/users/progress/%s", cliConfig.Server.Host, cliConfig.Server.HTTPPort, mangaID)
+	getReq, _ := http.NewRequest("GET", apiURL, nil)
+	getReq.Header.Set("Authorization", "Bearer "+cliConfig.User.Token)
+	
+	client := &http.Client{}
+	getResp, err := client.Do(getReq)
+	if err == nil && getResp.StatusCode == http.StatusOK {
+		var statusResp struct {
+			Success bool `json:"success"`
+			Data    struct {
+					Progress climodels.UserProgress `json:"progress"`
+				} `json:"data"`
+		}
+		if err := json.NewDecoder(getResp.Body).Decode(&statusResp); err == nil {
+			currentStatus = statusResp.Data.Progress.Status
+		}
+		getResp.Body.Close()
+	}
+
+	reqBody := climodels.ProgressUpdateRequest{}
+	reqBody.Status = currentStatus
+	
+	// Default values or from positional argument
+	if len(os.Args) > 4 {
+		// Check if the 4th argument is a number (chapter)
+		if val, err := strconv.Atoi(os.Args[4]); err == nil {
+			reqBody.CurrentChapter = val
+		}
+	}
+
+	var rating *int
 	for i := 4; i < len(os.Args); i++ {
 		arg := os.Args[i]
 		if strings.HasPrefix(arg, "--chapter=") {
@@ -82,7 +113,7 @@ func progressUpdate() {
 
 	jsonReqBody, _ := json.Marshal(reqBody)
 
-	apiURL := fmt.Sprintf("http://%s:%d/api/v1/users/progress/%s", cliConfig.Server.Host, cliConfig.Server.HTTPPort, mangaID)
+	apiURL = fmt.Sprintf("http://%s:%d/api/v1/users/progress/%s", cliConfig.Server.Host, cliConfig.Server.HTTPPort, mangaID)
 	req, err := http.NewRequest("PUT", apiURL, bytes.NewBuffer(jsonReqBody))
 	if err != nil {
 		fmt.Printf("Error creating request: %v\n", err)
@@ -91,7 +122,6 @@ func progressUpdate() {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+cliConfig.User.Token)
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("Error connecting to API: %v\n", err)

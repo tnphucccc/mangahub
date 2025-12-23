@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  api-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+      - "9093:9093"
+    environment:
+      - CONFIG_PATH=/app/configs/docker.yaml
+      - TCP_HOST=tcp-server
+      - UDP_HOST=udp-server
+      - GRPC_HOST=grpc-server
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+    depends_on:
+      - tcp-server
+      - udp-server
+      - grpc-server
+
+  tcp-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: /app/tcp-server
+    ports:
+      - "9090:9090"
+    environment:
+      - CONFIG_PATH=/app/configs/docker.yaml
+    volumes:
+      - ./configs:/app/configs
+
+  udp-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: /app/udp-server
+    ports:
+      - "9091:9091/udp"
+    environment:
+      - CONFIG_PATH=/app/configs/docker.yaml
+    volumes:
+      - ./configs:/app/configs
+
+  grpc-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: /app/grpc-server
+    ports:
+      - "9092:9092"
+    environment:
+      - CONFIG_PATH=/app/configs/docker.yaml
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs

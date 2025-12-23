@@ -101,71 +101,17 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 	reader := bufio.NewReader(conn)
 
-	// Wait for authentication (30 second timeout)
-	conn.SetReadDeadline(time.Now().Add(30 * time.Second))
-
-	// Read authentication message
-	line, err := reader.ReadBytes('\n')
-	if err != nil {
-		log.Printf("Failed to read auth message from %s: %v", clientID, err)
-		s.sendError(client, "AUTH_TIMEOUT", "Authentication timeout")
-		return
-	}
-
-	var msg models.TCPMessage
-	if err := json.Unmarshal(line, &msg); err != nil {
-		log.Printf("Failed to parse message from %s: %v", clientID, err)
-		s.sendError(client, "INVALID_MESSAGE", "Invalid message format")
-		return
-	}
-
-	// Verify it's an auth message
-	if msg.Type != models.TCPMessageTypeAuth {
-		s.sendAuthFailed(client, "First message must be authentication")
-		return
-	}
-
-	// Parse auth data
-	authDataBytes, err := json.Marshal(msg.Data)
-	if err != nil {
-		s.sendAuthFailed(client, "Invalid authentication data")
-		return
-	}
-
-	var authData models.TCPAuthMessage
-	if err := json.Unmarshal(authDataBytes, &authData); err != nil {
-		s.sendAuthFailed(client, "Invalid authentication data")
-		return
-	}
-
-	// Validate JWT token
-	claims, err := s.jwtManager.ValidateToken(authData.Token)
-	if err != nil {
-		s.sendAuthFailed(client, "Invalid or expired token")
-		return
-	}
-
-	// Authentication successful
-	client.UserID = claims.UserID
-	client.Username = claims.Username
-
-	// Register client
-	s.registerClient(client)
-	defer s.unregisterClient(client)
-
-	// Send auth success
-	s.sendAuthSuccess(client)
-
-	// Remove read deadline for regular messages
-	conn.SetReadDeadline(time.Time{})
-
-	log.Printf("Client %s authenticated as user %s (%s)", clientID, claims.Username, claims.UserID)
-
 	// Read messages loop
+	isAuthenticated := false
+
 	for {
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
-			log.Printf("Client %s disconnected: %v", clientID, err)
+			if isAuthenticated {
+				log.Printf("Client %s (%s) disconnected: %v", clientID, client.Username, err)
+			} else {
+				log.Printf("Unauthenticated client %s disconnected: %v", clientID, err)
+			}
 			return
 		}
 
@@ -176,8 +122,54 @@ func (s *Server) handleConnection(conn net.Conn) {
 			continue
 		}
 
-		// Handle message based on type
-		s.handleMessage(client, msg)
+		// Handle Auth separately
+		if msg.Type == models.TCPMessageTypeAuth && !isAuthenticated {
+			// Parse auth data
+			authDataBytes, err := json.Marshal(msg.Data)
+			if err != nil {
+				s.sendAuthFailed(client, "Invalid authentication data")
+				continue
+			}
+
+			var authData models.TCPAuthMessage
+			if err := json.Unmarshal(authDataBytes, &authData); err != nil {
+				s.sendAuthFailed(client, "Invalid authentication data")
+				continue
+			}
+
+			// Validate JWT token
+			claims, err := s.jwtManager.ValidateToken(authData.Token)
+			if err != nil {
+				s.sendAuthFailed(client, "Invalid or expired token")
+				continue
+			}
+
+			// Authentication successful
+			client.UserID = claims.UserID
+			client.Username = claims.Username
+			isAuthenticated = true
+
+			// Register client
+			s.registerClient(client)
+			defer s.unregisterClient(client)
+
+			// Send auth success
+			s.sendAuthSuccess(client)
+
+			// Remove read deadline
+			conn.SetReadDeadline(time.Time{})
+
+			log.Printf("Client %s authenticated as user %s (%s)", clientID, claims.Username, claims.UserID)
+			continue
+		}
+
+		// For other messages, check if it's a progress update (allowed without auth for internal bridge)
+		// OR if the client is already authenticated.
+		if msg.Type == models.TCPMessageTypeProgress || isAuthenticated {
+			s.handleMessage(client, msg)
+		} else {
+			s.sendAuthFailed(client, "Authentication required")
+		}
 	}
 }
 
@@ -221,11 +213,26 @@ func (s *Server) handleProgressUpdate(client *Client, msg models.TCPMessage) {
 		return
 	}
 
+	username := client.Username
+	userID := client.UserID
+	mangaTitle := progressData.MangaTitle
+
+	// If unauthenticated (internal bridge), use data from message
+	if username == "" {
+		if progressData.Username != "" {
+			username = progressData.Username
+		} else {
+			username = "System"
+		}
+		userID = "system"
+	}
+
 	// Create broadcast message
 	broadcast := models.TCPProgressBroadcast{
-		UserID:         client.UserID,
-		Username:       client.Username,
+		UserID:         userID,
+		Username:       username,
 		MangaID:        progressData.MangaID,
+		MangaTitle:     mangaTitle,
 		CurrentChapter: progressData.CurrentChapter,
 		Status:         progressData.Status,
 		Timestamp:      time.Now(),
@@ -234,7 +241,7 @@ func (s *Server) handleProgressUpdate(client *Client, msg models.TCPMessage) {
 	// Send to broadcast channel
 	s.broadcast <- broadcast
 
-	log.Printf("Progress update from %s: manga=%s, chapter=%d", client.Username, progressData.MangaID, progressData.CurrentChapter)
+	log.Printf("Progress update (broadcasted): manga=%s, chapter=%d", progressData.MangaID, progressData.CurrentChapter)
 }
 
 // broadcastLoop listens for broadcast messages and sends to all clients

@@ -36,7 +36,7 @@ type UserProgressWithManga struct {
 
 // ProgressUpdateRequest represents data for updating reading progress
 type ProgressUpdateRequest struct {
-	CurrentChapter int            `json:"current_chapter" binding:"required,min=0"`
+	CurrentChapter *int           `json:"current_chapter" binding:"required,min=0"`
 	Status         *ReadingStatus `json:"status"`
 	Rating         *int           `json:"rating" binding:"omitempty,min=1,max=10"`
 }
