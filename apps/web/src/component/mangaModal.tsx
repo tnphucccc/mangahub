@@ -32,7 +32,7 @@ const MangaModal = ({ manga, onClose, onAddToLibrary }: MangaModalProps) => {
       >
         <div className="flex flex-col md:flex-row grow overflow-hidden">
           <img
-            src={defaultCover.src}
+            src={manga.cover_image_url || defaultCover.src}
             alt={`Cover for ${manga.title}`}
             className="w-full md:w-1/3 h-auto object-cover rounded-l-lg"
           />

@@ -10,7 +10,7 @@ interface MangaCardProps {
 
 const MangaCard = ({ manga, onClick }: MangaCardProps) => {
   // Use a placeholder if the cover image is missing
-  const coverImage = defaultCover.src
+  const coverImage = manga.cover_image_url || defaultCover.src
   return (
     <button
       onClick={onClick}

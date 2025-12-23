@@ -27,7 +27,7 @@ const LibraryMangaCard = ({ item, onUpdate }: LibraryMangaCardProps) => {
   const [currentChapter, setCurrentChapter] = useState(item.current_chapter)
   const [status, setStatus] = useState<ReadingStatus>(item.status)
   const [rating, setRating] = useState(
-    item.rating.Int64 ? Number(item.rating.Int64) : 1
+    item.rating ?? 1
   )
 
   const [isSaving, setIsSaving] = useState(false)
@@ -47,7 +47,7 @@ const LibraryMangaCard = ({ item, onUpdate }: LibraryMangaCardProps) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
       <img
-        src={defaultCover.src}
+        src={manga.cover_image_url || defaultCover.src}
         alt={`Cover for ${manga.title}`}
         className="w-full h-48 object-cover"
       />
@@ -71,7 +71,12 @@ const LibraryMangaCard = ({ item, onUpdate }: LibraryMangaCardProps) => {
               type="number"
               value={currentChapter}
               onChange={(e) => setCurrentChapter(Number(e.target.value))}
-              className="mt-1 p-1 w-full border rounded-md text-sm text-black"
+              disabled={!manga.total_chapters || manga.total_chapters <= 0}
+              className={`mt-1 p-1 w-full border rounded-md text-sm text-black ${
+                !manga.total_chapters || manga.total_chapters <= 0
+                  ? 'bg-gray-100 cursor-not-allowed'
+                  : ''
+              }`}
             />
           </div>
 
