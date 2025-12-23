@@ -67,42 +67,53 @@ func (r *Repository) FindByID(id string) (*models.Manga, error) {
 	return manga, nil
 }
 
-func (r *Repository) Search(query models.MangaSearchQuery) ([]models.Manga, error) {
-	sqlQuery := fmt.Sprintf(`
-		SELECT %s
-		FROM manga
-		WHERE 1=1
-	`, mangaSelectFields)
+func (r *Repository) Search(query models.MangaSearchQuery) ([]models.Manga, int, error) {
+	whereClauses := []string{"1=1"}
 	args := []interface{}{}
 
 	// Add title search (case-insensitive partial match)
 	if query.Title != "" {
-		sqlQuery += " AND LOWER(title) LIKE LOWER(?)"
+		whereClauses = append(whereClauses, "LOWER(title) LIKE LOWER(?)")
 		args = append(args, "%"+query.Title+"%")
 	}
 
 	// Add author search (case-insensitive partial match)
 	if query.Author != "" {
-		sqlQuery += " AND LOWER(author) LIKE LOWER(?)"
+		whereClauses = append(whereClauses, "LOWER(author) LIKE LOWER(?)")
 		args = append(args, "%"+query.Author+"%")
 	}
 
 	// Add genre filter (searches within JSON array)
 	if query.Genre != "" {
-		sqlQuery += " AND LOWER(genres) LIKE LOWER(?)"
+		whereClauses = append(whereClauses, "LOWER(genres) LIKE LOWER(?)")
 		args = append(args, "%"+query.Genre+"%")
 	}
 
 	// Add status filter (exact match)
 	if query.Status != "" {
-		sqlQuery += " AND status = ?"
+		whereClauses = append(whereClauses, "status = ?")
 		args = append(args, query.Status)
 	}
 
-	// Add ordering (by title alphabetically)
-	sqlQuery += " ORDER BY title ASC"
+	whereSQL := strings.Join(whereClauses, " AND ")
 
-	// Add pagination with proper bounds
+	// 1. Get total count
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM manga WHERE %s", whereSQL)
+	var total int
+	err := r.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get count: %w", err)
+	}
+
+	// 2. Get data
+	sqlQuery := fmt.Sprintf(`
+		SELECT %s
+		FROM manga
+		WHERE %s
+		ORDER BY title ASC
+	`, mangaSelectFields, whereSQL)
+
+	// Add pagination only if limit > 0
 	if query.Limit > 0 {
 		sqlQuery += " LIMIT ?"
 		args = append(args, query.Limit)
@@ -113,7 +124,12 @@ func (r *Repository) Search(query models.MangaSearchQuery) ([]models.Manga, erro
 		}
 	}
 
-	return r.queryMangaList(sqlQuery, args...)
+	mangaList, err := r.queryMangaList(sqlQuery, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return mangaList, total, nil
 }
 
 // queryMangaList executes a query and returns a list of manga (reduces duplication)
@@ -140,8 +156,16 @@ func (r *Repository) queryMangaList(query string, args ...interface{}) ([]models
 	return mangaList, nil
 }
 
-// FindAll retrieves all manga with pagination
-func (r *Repository) FindAll(limit, offset int) ([]models.Manga, error) {
+// FindAll retrieves all manga with optional pagination
+func (r *Repository) FindAll(limit, offset int) ([]models.Manga, int, error) {
+	// 1. Get total count
+	var total int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM manga").Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get total count: %w", err)
+	}
+
+	// 2. Get data
 	query := fmt.Sprintf(`
 		SELECT %s
 		FROM manga
@@ -159,7 +183,12 @@ func (r *Repository) FindAll(limit, offset int) ([]models.Manga, error) {
 		}
 	}
 
-	return r.queryMangaList(query, args...)
+	mangaList, err := r.queryMangaList(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return mangaList, total, nil
 }
 
 // GetUserLibrary retrieves a user's manga library with progress
