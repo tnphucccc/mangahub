@@ -7,11 +7,14 @@ import (
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/auth"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/chat"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/config"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/grpc_client"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/library"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/manga"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/notify"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/progress"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/server"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/stats"
+	"github.com/tnphucccc/mangahub/cmd/cli/internal/sync"
 )
 
 const version = "1.0.0-dev"
@@ -45,6 +48,12 @@ func main() {
 		chat.HandleChatCommand()
 	case "stats":
 		stats.HandleStatsCommand()
+	case "sync":
+		sync.HandleSyncCommand()
+	case "notify":
+		notify.HandleNotifyCommand()
+	case "grpc":
+		grpc_client.HandleGRPCCommand()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		printUsage()
@@ -67,31 +76,9 @@ func printUsage() {
 	fmt.Println("  progress             Progress tracking (update, history)")
 	fmt.Println("  chat                 Chat system (join, send)")
 	fmt.Println("  stats                User statistics (view)")
+	fmt.Println("  sync                 Real-time synchronization (TCP monitor)")
+	fmt.Println("  notify               Notifications (UDP listener)")
+	fmt.Println("  grpc                 Internal service queries (gRPC)")
 	fmt.Println("\nFor more information on a command:")
 	fmt.Println("  mangahub <command> help")
-}
-
-func handleServerCommand() {
-	// TODO: Implement server management
-	fmt.Println("Server command - TODO")
-}
-
-func handleMangaCommand() {
-	// TODO: Implement manga operations
-	fmt.Println("Manga command - TODO")
-}
-
-func handleLibraryCommand() {
-	// TODO: Implement library operations
-	fmt.Println("Library command - TODO")
-}
-
-func handleProgressCommand() {
-	// TODO: Implement progress tracking
-	fmt.Println("Progress command - TODO")
-}
-
-func handleChatCommand() {
-	// TODO: Implement chat
-	fmt.Println("Chat command - TODO")
 }
