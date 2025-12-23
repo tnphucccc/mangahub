@@ -35,9 +35,9 @@ export default function AuthPage() {
         username: userName,
         password: passWord,
       })
-
-      if (response && response.token) {
-        await login(response.token)
+      console.log('Login response:', response)
+      if (response && response.data) {
+        await login(response.data.token)
       } else {
         setError('Login failed: No token received.')
       }

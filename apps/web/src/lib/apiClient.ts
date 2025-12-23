@@ -3,7 +3,14 @@ import type {
   UserLoginRequest,
   UserRegisterRequest,
   User,
+  Manga,
   APIError,
+  MangaStatus,
+  Meta,
+  LibraryAddRequest,
+  APIResponse,
+  UserProgressWithManga,
+  ProgressUpdateRequest,
 } from '../../../../packages/types/src'
 
 // Create an axios instance with a base URL.
@@ -19,8 +26,9 @@ const instance = axios.create({
 instance.interceptors.response.use(
   // For successful responses (2xx), just return the data part of the response.
   (response) => {
-    // The backend wraps successful responses in a `data` object.
-    return response.data.data || response.data
+    // The backend wraps successful responses in `data` and `meta` objects.
+    // We return the whole response.data here to include both.
+    return response.data
   },
   // For error responses, reject with a structured error.
   (error) => {
@@ -36,26 +44,46 @@ instance.interceptors.response.use(
   }
 )
 
+export interface GetMangaParams {
+  title?: string
+  author?: string
+  genre?: string
+  status?: MangaStatus
+  limit?: number
+  offset?: number
+}
+
 // Define the shape of our API client.
-// Note: The axios interceptor unwraps responses, so we return the data directly
 interface ApiClient {
   setDefaultHeader: (name: string, value: string) => void
-  login: (
-    credentials: UserLoginRequest
-  ) => Promise<{ user: User; token: string }>
+  login: (credentials: UserLoginRequest) => Promise<{
+    data: {
+      user: User
+      token: string
+    }
+    success: boolean
+  }>
   register: (
     details: UserRegisterRequest
-  ) => Promise<{ user: User; token: string }>
-  getCurrentUser: () => Promise<User>
+  ) => Promise<{ data: { user: User; token: string }; success: boolean }>
+  getCurrentUser: () => Promise<{ data: { user: User }; success: boolean }>
+  getManga: (
+    params: GetMangaParams
+  ) => Promise<{ data: { items: Manga[] }; meta: Meta; success: boolean }>
+  addToLibrary: (mangaId: string) => Promise<APIResponse>
+  getLibrary: () => Promise<{
+    data: { items: UserProgressWithManga[] }
+    meta: Meta
+    success: boolean
+  }>
+  updateMangaProgress: (
+    mangaId: string,
+    data: ProgressUpdateRequest
+  ) => Promise<APIResponse>
 }
 
 // Implement the ApiClient.
 export const apiClient: ApiClient = {
-  /**
-   * Sets or clears a default header for all subsequent requests.
-   * @param name - The name of the header (e.g., 'Authorization').
-   * @param value - The value for the header. An empty string will clear it.
-   */
   setDefaultHeader: (name, value) => {
     if (value) {
       instance.defaults.headers.common[name] = value
@@ -64,15 +92,7 @@ export const apiClient: ApiClient = {
     }
   },
 
-  /**
-   * Performs user login.
-   * @param credentials - The user's login credentials (username, password).
-   * @returns The authentication response containing the user and token.
-   */
   login: async (credentials) => {
-    // Note: The Go API expects `username`, but our form uses `email`.
-    // The backend logic should be checked to confirm which one it uses.
-    // For now, we assume the login request can handle the 'email' field as a username.
     const request: UserLoginRequest = {
       username: credentials.username,
       password: credentials.password,
@@ -89,11 +109,41 @@ export const apiClient: ApiClient = {
     return instance.post('/auth/register', request)
   },
 
-  /**
-   * Fetches the profile of the currently authenticated user.
-   * @returns The user's profile information.
-   */
   getCurrentUser: async () => {
     return instance.get('/users/me')
+  },
+
+  getManga: async (params) => {
+    const endpoint = '/manga'
+
+    // Create a query string from the params object
+    const queryParams = new URLSearchParams()
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        queryParams.append(key, String(value))
+      }
+    })
+
+    const queryString = queryParams.toString()
+
+    return instance.get(`${endpoint}${queryString ? `?${queryString}` : ''}`)
+  },
+
+  addToLibrary: async (mangaId: string) => {
+    const request: LibraryAddRequest = {
+      manga_id: mangaId,
+      status: 'plan_to_read', // Default status when adding to library
+      current_chapter: 0,
+    }
+    return instance.post('/users/library', request)
+  },
+
+  getLibrary: async () => {
+    return instance.get('/users/library')
+  },
+
+  updateMangaProgress: async (mangaId, data) => {
+    return instance.put(`/users/progress/${mangaId}`, data)
   },
 }
