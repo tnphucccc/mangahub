@@ -15,12 +15,12 @@ type NullInt64 struct {
 
 // UserProgress represents a user's progress on a manga.
 type UserProgress struct {
-	UserID         string    `json:"user_id"`
-	MangaID        string    `json:"manga_id"`
-	CurrentChapter int       `json:"current_chapter"`
-	Status         string    `json:"status"`
-	Rating         NullInt64 `json:"rating"`
-	UpdatedAt      string    `json:"updated_at"` // Using string for simplicity, can be time.Time
+	UserID         string `json:"user_id"`
+	MangaID        string `json:"manga_id"`
+	CurrentChapter int    `json:"current_chapter"`
+	Status         string `json:"status"`
+	Rating         *int   `json:"rating"`
+	UpdatedAt      string `json:"updated_at"` // Using string for simplicity, can be time.Time
 }
 
 // UserProgressWithManga combines UserProgress with Manga details.

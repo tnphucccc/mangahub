@@ -179,8 +179,8 @@ func libraryList() {
 			fmt.Printf("  Title: %s\n", item.Manga.Title)
 			fmt.Printf("  Status: %s\n", item.UserProgress.Status)
 			fmt.Printf("  Current Chapter: %d\n", item.UserProgress.CurrentChapter)
-			if item.UserProgress.Rating.Valid && item.UserProgress.Rating.Int64 > 0 {
-				fmt.Printf("  Rating: %d/10\n", item.UserProgress.Rating.Int64)
+			if item.UserProgress.Rating != nil && *item.UserProgress.Rating > 0 {
+				fmt.Printf("  Rating: %d/10\n", *item.UserProgress.Rating)
 			}
 			fmt.Printf("  Updated At: %s\n", item.UserProgress.UpdatedAt)
 			fmt.Printf("  --------------------\n")

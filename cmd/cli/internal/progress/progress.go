@@ -56,20 +56,40 @@ func progressUpdate() {
 
 	mangaID := os.Args[3]
 
-	// 1. Fetch current progress to get status if not provided
+	// 1. Fetch manga details to check if total chapters is N/A
+	mangaURL := fmt.Sprintf("http://%s:%d/api/v1/manga/%s", cliConfig.Server.Host, cliConfig.Server.HTTPPort, mangaID)
+	client := &http.Client{}
+	mangaResp, err := client.Get(mangaURL)
+	if err != nil {
+		fmt.Printf("Error fetching manga details: %v\n", err)
+		os.Exit(1)
+	}
+	defer mangaResp.Body.Close()
+
+	if mangaResp.StatusCode != http.StatusOK {
+		fmt.Printf("Error: Manga not found or server error (%d)\n", mangaResp.StatusCode)
+		os.Exit(1)
+	}
+
+	var mangaDetail climodels.MangaDetailResponse
+	if err := json.NewDecoder(mangaResp.Body).Decode(&mangaDetail); err != nil {
+		fmt.Printf("Error decoding manga details: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 2. Fetch current progress to get status if not provided
 	currentStatus := ""
 	apiURL := fmt.Sprintf("http://%s:%d/api/v1/users/progress/%s", cliConfig.Server.Host, cliConfig.Server.HTTPPort, mangaID)
 	getReq, _ := http.NewRequest("GET", apiURL, nil)
 	getReq.Header.Set("Authorization", "Bearer "+cliConfig.User.Token)
-	
-	client := &http.Client{}
+
 	getResp, err := client.Do(getReq)
 	if err == nil && getResp.StatusCode == http.StatusOK {
 		var statusResp struct {
 			Success bool `json:"success"`
 			Data    struct {
-					Progress climodels.UserProgress `json:"progress"`
-				} `json:"data"`
+				Progress climodels.UserProgress `json:"progress"`
+			}
 		}
 		if err := json.NewDecoder(getResp.Body).Decode(&statusResp); err == nil {
 			currentStatus = statusResp.Data.Progress.Status
@@ -79,11 +99,15 @@ func progressUpdate() {
 
 	reqBody := climodels.ProgressUpdateRequest{}
 	reqBody.Status = currentStatus
-	
+
 	// Default values or from positional argument
 	if len(os.Args) > 4 {
 		// Check if the 4th argument is a number (chapter)
 		if val, err := strconv.Atoi(os.Args[4]); err == nil {
+			if mangaDetail.Manga.TotalChapters <= 0 && val > 0 {
+				fmt.Printf("❌ Cannot update chapter to %d because total chapters is N/A.\n", val)
+				os.Exit(1)
+			}
 			reqBody.CurrentChapter = val
 		}
 	}
@@ -95,6 +119,10 @@ func progressUpdate() {
 			chapter, err := strconv.Atoi(strings.TrimPrefix(arg, "--chapter="))
 			if err != nil {
 				fmt.Printf("Error: Invalid chapter number: %v\n", err)
+				os.Exit(1)
+			}
+			if mangaDetail.Manga.TotalChapters <= 0 && chapter > 0 {
+				fmt.Printf("❌ Cannot update chapter to %d because total chapters is N/A.\n", chapter)
 				os.Exit(1)
 			}
 			reqBody.CurrentChapter = chapter
