@@ -46,6 +46,8 @@ type TCPAuthFailedMessage struct {
 // TCPProgressMessage contains progress update data
 type TCPProgressMessage struct {
 	MangaID        string        `json:"manga_id"`
+	MangaTitle     string        `json:"manga_title,omitempty"`
+	Username       string        `json:"username,omitempty"`
 	CurrentChapter int           `json:"current_chapter"`
 	Status         ReadingStatus `json:"status,omitempty"`
 	Rating         *int          `json:"rating,omitempty"`

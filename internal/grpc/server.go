@@ -81,11 +81,12 @@ func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 func (s *Server) UpdateProgress(ctx context.Context, req *pb.UpdateProgressRequest) (*pb.UpdateProgressResponse, error) {
 	statusVal := models.ReadingStatus(req.GetStatus())
 	ratingVal := int(req.GetRating())
+	chapterVal := int(req.GetChapter())
 
 	request := models.ProgressUpdateRequest{
 		Status:         &statusVal,
 		Rating:         &ratingVal,
-		CurrentChapter: int(req.GetChapter()),
+		CurrentChapter: &chapterVal,
 	}
 
 	err := s.mangaService.UpdateProgress(req.GetUserId(), req.GetMangaId(), request)

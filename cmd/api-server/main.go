@@ -71,7 +71,7 @@ func main() {
 
 	// Initialize services
 	userService := user.NewService(userRepo, jwtManager)
-	mangaService := manga.NewService(mangaRepo)
+	mangaService := manga.NewService(mangaRepo, userRepo)
 	statsService := stats.NewService(statsRepo)
 
 	// Initialize handlers
@@ -83,8 +83,16 @@ func main() {
 	wsHub := websocket.NewHub()
 	go wsHub.Run(ctx) // Pass context to hub
 
+	// Internal service addresses (for Docker networking)
+	tcpHost := utils.GetEnv("TCP_HOST", cfg.Server.Host)
+	udpHost := utils.GetEnv("UDP_HOST", cfg.Server.Host)
+	// grpcHost := utils.GetEnv("GRPC_HOST", cfg.Server.Host)
+
+	tcpAddr := net.JoinHostPort(tcpHost, cfg.Server.TCPPort)
+	udpAddr := net.JoinHostPort(udpHost, cfg.Server.UDPPort)
+
 	// Start UDP listener and bridge to WebSocket
-	go listenForUDPNotifications(ctx, wsHub, cfg.GetUDPAddress())
+	go listenForUDPNotifications(ctx, wsHub, udpAddr)
 
 	// Initialize Gin router
 	router := gin.Default()
@@ -140,6 +148,20 @@ func main() {
 			userRoutes.PUT("/progress/:manga_id", mangaHandler.UpdateProgress) // Update reading progress
 			userRoutes.GET("/stats", statsHandler.GetStats)                    // Get user statistics
 		}
+
+		// Admin routes (simplified for demo)
+		adminRoutes := api.Group("/admin")
+		{
+			adminRoutes.POST("/notifications", func(c *gin.Context) {
+				var req models.UDPNotification
+				if err := c.ShouldBindJSON(&req); err != nil {
+					c.JSON(400, gin.H{"error": "Invalid request"})
+					return
+				}
+				mangaService.NotifyNotification(req)
+				c.JSON(200, gin.H{"message": "Notification queued"})
+			})
+		}
 	}
 
 	// Start HTTP server in a non-blocking way
@@ -178,6 +200,20 @@ func main() {
 	log.Printf("  - Add to library: POST /api/v1/users/library (HTTP, protected)")
 	log.Printf("  - Update progress: PUT /api/v1/users/progress/:manga_id (HTTP, protected)")
 
+	// Bridge for TCP/UDP notifications from HTTP handlers
+	go func() {
+		for {
+			select {
+			case progress := <-mangaService.TCPBroadcastChan:
+				notifyTCPServer(tcpAddr, progress)
+			case notification := <-mangaService.UDPNotificationChan:
+				notifyUDPServer(udpAddr, notification)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	// Block until context is cancelled
 	<-ctx.Done()
 	log.Println("API server exiting. Shutting down HTTP and WebSocket servers...")
@@ -199,6 +235,69 @@ func main() {
 	// A more robust solution would be to create an http.Server for Gin and call its Shutdown method.
 	// Given the academic project context, this might be acceptable.
 	log.Println("HTTP server will stop once main goroutine exits.")
+}
+
+// notifyTCPServer connects to the TCP server and sends a progress update broadcast request.
+func notifyTCPServer(address string, progress models.TCPProgressBroadcast) {
+	conn, err := net.DialTimeout("tcp", address, 2*time.Second)
+	if err != nil {
+		log.Printf("Failed to connect to TCP server for notification: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	// The TCP server expects a JSON message followed by a newline.
+	// But it also expects authentication first. 
+	// To simplify for the academic project, we'll use a specific message type 
+	// or the TCP server's internal channel if they were in the same process.
+	// Since they are separate, we'll just send a TCPProgress message.
+	
+	msg := models.TCPMessage{
+		Type:      models.TCPMessageTypeProgress,
+		Timestamp: time.Now(),
+		Data: models.TCPProgressMessage{
+			MangaID:        progress.MangaID,
+			MangaTitle:     progress.MangaTitle,
+			Username:       progress.Username,
+			CurrentChapter: progress.CurrentChapter,
+			Status:         models.ReadingStatus(progress.Status),
+		},
+	}
+
+	data, _ := json.Marshal(msg)
+	data = append(data, '\n')
+	conn.Write(data)
+	log.Printf("Notified TCP server about progress: %s - Chapter %d", progress.MangaID, progress.CurrentChapter)
+}
+
+// notifyUDPServer sends a notification message to the UDP server.
+func notifyUDPServer(address string, notification models.UDPNotification) {
+	addr, err := net.ResolveUDPAddr("udp", address)
+	if err != nil {
+		log.Printf("Failed to resolve UDP address: %v", err)
+		return
+	}
+
+	conn, err := net.DialUDP("udp", nil, addr)
+	if err != nil {
+		log.Printf("Failed to dial UDP: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	// We'll just send a special notification message that the UDP server can broadcast.
+	// Note: The current UDP server only broadcasts what it receives via its internal 'notify' channel.
+	// We need to make sure the UDP server can receive this from "trusted" sources.
+	
+	msg := models.UDPMessage{
+		Type:      models.UDPMessageTypeNotification,
+		Timestamp: time.Now(),
+		Data:      notification,
+	}
+
+	data, _ := json.Marshal(msg)
+	conn.Write(data)
+	log.Printf("Notified UDP server about new chapter: %s - Chapter %d", notification.MangaTitle, notification.ChapterNumber)
 }
 
 // listenForUDPNotifications acts as a UDP client, registers with the UDP server,

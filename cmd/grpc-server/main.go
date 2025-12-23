@@ -12,8 +12,10 @@ import (
 	grpchandler "github.com/tnphucccc/mangahub/internal/grpc"
 	"github.com/tnphucccc/mangahub/internal/grpc/pb"
 	"github.com/tnphucccc/mangahub/internal/manga"
+	"github.com/tnphucccc/mangahub/internal/user"
 	"github.com/tnphucccc/mangahub/pkg/config"
 	"github.com/tnphucccc/mangahub/pkg/database"
+	"github.com/tnphucccc/mangahub/pkg/utils"
 	"google.golang.org/grpc"
 )
 
@@ -22,7 +24,8 @@ func main() {
 	defer cancel()
 
 	// Load configuration
-	cfg, err := config.Load("dev")
+	configPath := utils.GetEnv("CONFIG_PATH", "./configs/dev.yaml")
+	cfg, err := config.LoadFromEnv(configPath)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
@@ -38,7 +41,8 @@ func main() {
 
 	// Dependency Injection
 	mangaRepo := manga.NewRepository(db)
-	mangaService := manga.NewService(mangaRepo)
+	userRepo := user.NewRepository(db)
+	mangaService := manga.NewService(mangaRepo, userRepo)
 
 	// Initialize gRPC Server
 	grpcService := grpchandler.NewServer(mangaService)
