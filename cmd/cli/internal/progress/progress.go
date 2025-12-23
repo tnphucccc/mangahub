@@ -71,11 +71,15 @@ func progressUpdate() {
 		os.Exit(1)
 	}
 
-	var mangaDetail climodels.MangaDetailResponse
-	if err := json.NewDecoder(mangaResp.Body).Decode(&mangaDetail); err != nil {
+	var apiResp struct {
+		Success bool                          `json:"success"`
+		Data    climodels.MangaDetailResponse `json:"data"`
+	}
+	if err := json.NewDecoder(mangaResp.Body).Decode(&apiResp); err != nil {
 		fmt.Printf("Error decoding manga details: %v\n", err)
 		os.Exit(1)
 	}
+	mangaDetail := apiResp.Data
 
 	// 2. Fetch current progress to get status if not provided
 	currentStatus := ""
