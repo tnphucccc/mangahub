@@ -8,7 +8,7 @@ info:
 
 servers:
   - url: http://localhost:8080/api/v1
-    description: Development server
+    description: Development HTTP server
 
 tags:
   - name: auth
@@ -19,8 +19,52 @@ tags:
     description: User library management
   - name: progress
     description: Reading progress tracking
+  - name: stats
+    description: User statistics
+  - name: admin
+    description: Administrative endpoints
 
 paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check the health of the API server and its dependencies
+      servers:
+        - url: http://localhost:8080
+          description: Root server
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: MangaHub HTTP API Server
+                  version:
+                    type: string
+                    example: 1.0.0
+        "500":
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: unhealthy
+                  service:
+                    type: string
+                    example: MangaHub HTTP API Server
+                  error:
+                    type: string
+
   /auth/register:
     post:
       tags: [auth]
@@ -258,6 +302,56 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /users/stats:
+    get:
+      tags: [stats]
+      summary: Get user reading statistics
+      operationId: getUserStats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStatsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/notifications:
+    post:
+      tags: [admin]
+      summary: Send a chapter notification (Demo)
+      description: This endpoint is for demonstration purposes and triggers a UDP notification.
+      operationId: sendNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UDPNotification"
+      responses:
+        "200":
+          description: Notification queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /ws:
+    get:
+      summary: WebSocket chat endpoint
+      description: Connect to the real-time chat server
+      servers:
+        - url: ws://localhost:9093
+          description: WebSocket server
+      responses:
+        "101":
+          description: Switching Protocols to WebSocket
+
 components:
   securitySchemes:
     bearerAuth:
@@ -482,6 +576,31 @@ components:
               properties:
                 user:
                   $ref: "#/components/schemas/User"
+
+    UserStats:
+      type: object
+      properties:
+        total_manga:
+          type: integer
+        total_chapters_read:
+          type: integer
+        completed_manga:
+          type: integer
+        reading_manga:
+          type: integer
+        plan_to_read_manga:
+          type: integer
+        average_rating:
+          type: number
+          format: float
+
+    UserStatsResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/UserStats"
 
     # ==========================================
     # Manga Schemas
