@@ -11,6 +11,7 @@ import Header from '../../component/header'
 import LibraryMangaCard from '../../component/libraryMangaCard'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { ClipLoader } from 'react-spinners'
 
 function LibraryPage() {
   const [library, setLibrary] = useState<UserProgressWithManga[]>([])
@@ -21,7 +22,6 @@ function LibraryPage() {
     try {
       setLoading(true)
       const response = await apiClient.getLibrary()
-      console.log('Library response:', response)
       setLibrary(response.data.items || [])
     } catch (err: any) {
       setError(err.message || 'Failed to fetch library.')
@@ -59,7 +59,11 @@ function LibraryPage() {
       <Header />
       <main className="container mx-auto px-6 py-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-8">My Library</h2>
-        {loading && <p className="text-center">Loading library...</p>}
+        {loading && (
+          <div className="flex justify-center">
+            <ClipLoader size={100} />
+          </div>
+        )}
         {error && <p className="text-center text-red-500">{error}</p>}
         {!loading && !error && library.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
