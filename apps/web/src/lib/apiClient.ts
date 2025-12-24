@@ -80,6 +80,14 @@ interface ApiClient {
     mangaId: string,
     data: ProgressUpdateRequest
   ) => Promise<APIResponse>
+  sendNotification: (
+    manga_id: string,
+    manga_title: string,
+    chapter_number: number,
+    chapter_title: string,
+    release_date: string,
+    message: string
+  ) => Promise<APIResponse>
 }
 
 // Implement the ApiClient.
@@ -145,5 +153,24 @@ export const apiClient: ApiClient = {
 
   updateMangaProgress: async (mangaId, data) => {
     return instance.put(`/users/progress/${mangaId}`, data)
+  },
+
+  sendNotification: async (
+    manga_id,
+    manga_title,
+    chapter_number,
+    chapter_title,
+    release_date,
+    message
+  ) => {
+    const notification = {
+      manga_id,
+      manga_title,
+      chapter_number,
+      chapter_title,
+      release_date,
+      message,
+    }
+    return instance.post(`/admin/notifications`, notification)
   },
 }

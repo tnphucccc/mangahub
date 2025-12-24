@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import type { Manga } from '../../../../packages/types/src'
 import defaultCover from '@/../public/assets/bookcover_cover.png'
 import { upperCaseFirstLetter } from '@/app/helpers/upperCaseFirstLetter'
@@ -8,38 +8,29 @@ interface MangaModalProps {
   manga: Manga | null
   onClose: () => void
   onAddToLibrary: (mangaId: string) => void
+  onSendNotification: (newChapNum: number, newChapTitle: string) => void
 }
 
-const MangaModal = ({ manga, onClose, onAddToLibrary }: MangaModalProps) => {
-  const [showNewChapterForm, setShowNewChapterForm] = React.useState(false)
-  const [newChapterNumber, setNewChapterNumber] = React.useState(0)
-  const [newChapterTitle, setNewChapterTitle] = React.useState('')
+const MangaModal = ({
+  manga,
+  onClose,
+  onAddToLibrary,
+  onSendNotification,
+}: MangaModalProps) => {
+  const [showNewChapterForm, setShowNewChapterForm] = useState(false)
+  const [newChapterNumber, setNewChapterNumber] = useState(0)
+  const [newChapterTitle, setNewChapterTitle] = useState('')
 
   if (!manga) {
     return null
   }
 
-  const handleSendNotification = async () => {
-    if (!manga) return;
-    try {
-      const notification = {
-        manga_id: manga.id,
-        manga_title: manga.title,
-        chapter_number: newChapterNumber,
-        chapter_title: newChapterTitle,
-        release_date: new Date().toISOString(),
-        message: `A new chapter of ${manga.title} is out!`
-      };
-      await apiClient.post(`/admin/notifications`, notification);
-      alert('Notification for new chapter sent!');
-      setShowNewChapterForm(false);
-      setNewChapterNumber(0);
-      setNewChapterTitle('');
-    } catch (error) {
-      console.error('Failed to send new chapter notification', error);
-      alert('Failed to send notification.');
-    }
-  };
+  const handleSendNotification = () => {
+    onSendNotification(newChapterNumber, newChapterTitle)
+    setShowNewChapterForm(false)
+    setNewChapterNumber(0)
+    setNewChapterTitle('')
+  }
 
   // Stop propagation to prevent clicks inside the modal from closing it
   const handleModalContentClick = (e: React.MouseEvent) => {
@@ -149,14 +140,14 @@ const MangaModal = ({ manga, onClose, onAddToLibrary }: MangaModalProps) => {
                   placeholder="Chapter Number"
                   value={newChapterNumber}
                   onChange={(e) => setNewChapterNumber(Number(e.target.value))}
-                  className="w-1/3 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-1/3 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
                 />
                 <input
                   type="text"
                   placeholder="Chapter Title (optional)"
                   value={newChapterTitle}
                   onChange={(e) => setNewChapterTitle(e.target.value)}
-                  className="flex-grow px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="grow px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
                 />
               </div>
               <div className="flex justify-end space-x-2">

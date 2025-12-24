@@ -76,6 +76,27 @@ function HomePage() {
     }
   }
 
+  const handleSendNotification = async (
+    newChapNum: number,
+    newChapTitle: string
+  ) => {
+    if (!selectedManga) return
+    try {
+      await apiClient.sendNotification(
+        selectedManga.id,
+        selectedManga.title,
+        newChapNum,
+        newChapTitle,
+        new Date().toISOString(),
+        `A new chapter of ${selectedManga.title} is out!`
+      )
+      toast.success('Notification for new chapter sent!')
+    } catch (error) {
+      console.error('Failed to send new chapter notification', error)
+      toast.error('Failed to send notification.')
+    }
+  }
+
   useEffect(() => {
     fetchManga()
   }, [fetchManga])
@@ -134,6 +155,7 @@ function HomePage() {
         manga={selectedManga}
         onClose={handleCloseModal}
         onAddToLibrary={handleAddToLibrary}
+        onSendNotification={handleSendNotification}
       />
       <ToastContainer
         position="bottom-right"
