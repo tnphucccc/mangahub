@@ -7,6 +7,7 @@ import type {
 } from '../../../../packages/types/src'
 import { upperCaseFirstLetter } from '@/app/helpers/upperCaseFirstLetter'
 import defaultCover from '@/../public/assets/bookcover_cover.png'
+import Image from 'next/image'
 
 interface LibraryMangaCardProps {
   item: UserProgressWithManga
@@ -46,7 +47,9 @@ const LibraryMangaCard = ({ item, onUpdate }: LibraryMangaCardProps) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-      <img
+      <Image
+        width={400}
+        height={600}
         src={manga.cover_image_url || defaultCover.src}
         alt={`Cover for ${manga.title}`}
         className="w-full h-48 object-cover"

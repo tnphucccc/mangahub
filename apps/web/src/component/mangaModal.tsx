@@ -2,6 +2,7 @@ import React from 'react'
 import type { Manga } from '../../../../packages/types/src'
 import defaultCover from '@/../public/assets/bookcover_cover.png'
 import { upperCaseFirstLetter } from '@/app/helpers/upperCaseFirstLetter'
+import Image from 'next/image'
 
 interface MangaModalProps {
   manga: Manga | null
@@ -19,6 +20,8 @@ const MangaModal = ({ manga, onClose, onAddToLibrary }: MangaModalProps) => {
     e.stopPropagation()
   }
 
+  const coverImage = manga.cover_image_url || defaultCover.src
+
   return (
     // Backdrop
     <div
@@ -31,10 +34,12 @@ const MangaModal = ({ manga, onClose, onAddToLibrary }: MangaModalProps) => {
         onClick={handleModalContentClick}
       >
         <div className="flex flex-col md:flex-row grow overflow-hidden">
-          <img
-            src={manga.cover_image_url || defaultCover.src}
+          <Image
+            width={400}
+            height={600}
+            src={coverImage}
             alt={`Cover for ${manga.title}`}
-            className="w-full md:w-1/3 h-auto object-cover rounded-l-lg"
+            className="h-full object-cover"
           />
           <div className="p-6 flex flex-col flex-1 overflow-y-auto relative">
             <button
