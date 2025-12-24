@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"syscall"
 
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/config"
 )
@@ -120,7 +119,7 @@ func startServer(name string) {
 	cmd := exec.Command(binaryPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	setProcessGroup(cmd)
 
 	if err := cmd.Start(); err != nil {
 		fmt.Printf("Failed to start server '%s': %v\n", name, err)
@@ -150,7 +149,7 @@ func stopServer(name string) {
 	}
 
 	// Attempt to kill the process group.
-	if err := syscall.Kill(-pid, syscall.SIGKILL); err != nil {
+	if err := killProcessGroup(pid); err != nil {
 		fmt.Printf("Warning: could not kill process group %d (it may have already exited): %v\n", pid, err)
 	}
 
