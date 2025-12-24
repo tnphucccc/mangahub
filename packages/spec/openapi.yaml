@@ -23,6 +23,10 @@ tags:
     description: User statistics
   - name: admin
     description: Administrative endpoints
+  - name: stats
+    description: User statistics
+  - name: admin
+    description: Administrative endpoints
 
 paths:
   /health:
