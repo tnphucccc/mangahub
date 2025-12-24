@@ -72,7 +72,6 @@ const LibraryMangaCard = ({ item, onUpdate }: LibraryMangaCardProps) => {
               type="number"
               value={currentChapter}
               onChange={(e) => setCurrentChapter(Number(e.target.value))}
-              disabled={!manga.total_chapters || manga.total_chapters <= 0}
               className={`mt-1 p-1 w-full border rounded-md text-sm text-black ${
                 !manga.total_chapters || manga.total_chapters <= 0
                   ? 'bg-gray-100 cursor-not-allowed'

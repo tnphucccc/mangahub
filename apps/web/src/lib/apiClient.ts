@@ -16,7 +16,7 @@ import type {
 // Create an axios instance with a base URL.
 // The Go API server runs on port 8080.
 const instance = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+  baseURL: 'http://192.168.1.173:8080/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },

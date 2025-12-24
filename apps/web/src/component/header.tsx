@@ -22,6 +22,11 @@ const Header = () => {
               My Library
             </span>
           </Link>
+          <Link href="/management">
+            <span className="text-gray-600 hover:text-gray-900 mr-4">
+              Management
+            </span>
+          </Link>
         </nav>
         <div className="flex items-center">
           <p className="text-gray-600 mr-4">
