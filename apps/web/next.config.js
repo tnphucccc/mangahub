@@ -1,7 +1,26 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['uploads.mangadex.org', 'via.placeholder.com', 'example.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'uploads.mangadex.org',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
 }
 

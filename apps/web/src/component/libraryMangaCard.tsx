@@ -27,9 +27,7 @@ const LibraryMangaCard = ({ item, onUpdate }: LibraryMangaCardProps) => {
   // Initialize state from the prop
   const [currentChapter, setCurrentChapter] = useState(item.current_chapter)
   const [status, setStatus] = useState<ReadingStatus>(item.status)
-  const [rating, setRating] = useState(
-    item.rating.Int64 > 0 ? item.rating.Int64 : 1
-  )
+  const [rating, setRating] = useState(item.rating ? item.rating : 1)
 
   const [isSaving, setIsSaving] = useState(false)
 
