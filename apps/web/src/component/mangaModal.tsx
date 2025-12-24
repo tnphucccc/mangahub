@@ -11,9 +11,35 @@ interface MangaModalProps {
 }
 
 const MangaModal = ({ manga, onClose, onAddToLibrary }: MangaModalProps) => {
+  const [showNewChapterForm, setShowNewChapterForm] = React.useState(false)
+  const [newChapterNumber, setNewChapterNumber] = React.useState(0)
+  const [newChapterTitle, setNewChapterTitle] = React.useState('')
+
   if (!manga) {
     return null
   }
+
+  const handleSendNotification = async () => {
+    if (!manga) return;
+    try {
+      const notification = {
+        manga_id: manga.id,
+        manga_title: manga.title,
+        chapter_number: newChapterNumber,
+        chapter_title: newChapterTitle,
+        release_date: new Date().toISOString(),
+        message: `A new chapter of ${manga.title} is out!`
+      };
+      await apiClient.post(`/admin/notifications`, notification);
+      alert('Notification for new chapter sent!');
+      setShowNewChapterForm(false);
+      setNewChapterNumber(0);
+      setNewChapterTitle('');
+    } catch (error) {
+      console.error('Failed to send new chapter notification', error);
+      alert('Failed to send notification.');
+    }
+  };
 
   // Stop propagation to prevent clicks inside the modal from closing it
   const handleModalContentClick = (e: React.MouseEvent) => {
@@ -114,13 +140,56 @@ const MangaModal = ({ manga, onClose, onAddToLibrary }: MangaModalProps) => {
             </div>
           </div>
         </div>
-        <div className="p-4 border-t flex justify-end">
-          <button
-            onClick={() => onAddToLibrary(manga.id)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Add to Library
-          </button>
+        <div className="p-4 border-t flex flex-col">
+          {showNewChapterForm ? (
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center space-x-4">
+                <input
+                  type="number"
+                  placeholder="Chapter Number"
+                  value={newChapterNumber}
+                  onChange={(e) => setNewChapterNumber(Number(e.target.value))}
+                  className="w-1/3 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+                <input
+                  type="text"
+                  placeholder="Chapter Title (optional)"
+                  value={newChapterTitle}
+                  onChange={(e) => setNewChapterTitle(e.target.value)}
+                  className="flex-grow px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setShowNewChapterForm(false)}
+                  className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendNotification}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  Send Notification
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-end">
+              <button
+                onClick={() => onAddToLibrary(manga.id)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Add to Library
+              </button>
+              <button
+                onClick={() => setShowNewChapterForm(true)}
+                className="ml-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Add New Chapter
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
