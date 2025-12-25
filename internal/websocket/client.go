@@ -6,11 +6,13 @@ package websocket
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/tnphucccc/mangahub/pkg/models"
 )
 
 const (
@@ -46,6 +48,12 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	// Username of the client
+	username string
+
+	// Room the client is in
+	room string
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -70,7 +78,27 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.Broadcast <- message
+
+		// Parse incoming message as JSON
+		var wsMsg models.WebSocketMessage
+		if err := json.Unmarshal(message, &wsMsg); err != nil {
+			log.Printf("[Client] Failed to parse message: %v", err)
+			continue
+		}
+
+		// Handle different message types
+		switch wsMsg.Type {
+		case models.WSJoinRoom:
+			// Update client's room
+			c.room = wsMsg.Room
+			c.username = wsMsg.Username
+		case models.WSChatMessage:
+			// Broadcast chat message to room
+			wsMsg.Username = c.username
+			wsMsg.Room = c.room
+			wsMsg.Timestamp = time.Now()
+			c.hub.Broadcast <- wsMsg
+		}
 	}
 }
 
@@ -127,7 +155,29 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+
+	// Extract username and room from query parameters
+	query := r.URL.Query()
+	username := query.Get("username")
+	room := query.Get("room")
+
+	// Default to "general" room if not specified
+	if room == "" {
+		room = "general"
+	}
+
+	// Default username if not provided
+	if username == "" {
+		username = "anonymous"
+	}
+
+	client := &Client{
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan []byte, 256),
+		username: username,
+		room:     room,
+	}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

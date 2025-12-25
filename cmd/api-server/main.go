@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http" // Added import for http.Server
@@ -405,14 +406,26 @@ func receiveUDPMessages(ctx context.Context, conn *net.UDPConn, hub *websocket.H
 
 			switch udpMsg.Type {
 			case models.UDPMessageTypeNotification:
-				// Forward notification data to WebSocket clients
-				notificationJSON, err := json.Marshal(udpMsg.Data)
+				var notification models.UDPNotification
+				// Re-marshal the generic interface back to bytes
+				dataBytes, err := json.Marshal(udpMsg.Data)
 				if err != nil {
-					log.Printf("Error marshaling notification for WebSocket: %v", err)
+					log.Printf("Error re-marshaling notification data: %v", err)
 					continue
 				}
-				log.Printf("Received UDP notification: %s", string(notificationJSON))
-				hub.Broadcast <- notificationJSON
+				if err := json.Unmarshal(dataBytes, &notification); err != nil {
+					log.Printf("Error unmarshaling notification data: %v", err)
+					continue
+				}
+				log.Printf("Received UDP notification: %s - Ch %d", notification.MangaTitle, notification.ChapterNumber)
+
+				wsMsg := models.WebSocketMessage{
+					Type:      models.WSSystemMessage,
+					Room:      "general",
+					Content:   fmt.Sprintf("New Chapter Release: %s - Chapter %d!", notification.MangaTitle, notification.ChapterNumber),
+					Timestamp: time.Now(),
+				}
+				hub.Broadcast <- wsMsg
 			case models.UDPMessageTypePong:
 				var pong models.UDPPongMessage
 				// Re-marshal the generic interface back to bytes

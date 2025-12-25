@@ -15,16 +15,21 @@ package websocket
 
 import (
 	"context" // Ensure context is explicitly imported
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/tnphucccc/mangahub/pkg/models"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
-	// Registered clients.
-	clients map[*Client]bool
+	// Registered clients per room (room -> clients)
+	rooms map[string]map[*Client]bool
 
 	// Inbound messages from the clients.
-	Broadcast chan []byte
+	Broadcast chan models.WebSocketMessage
 
 	// Register requests from the clients.
 	register chan *Client
@@ -35,10 +40,10 @@ type Hub struct {
 
 func NewHub() *Hub {
 	return &Hub{
-		Broadcast:  make(chan []byte),
+		Broadcast:  make(chan models.WebSocketMessage),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		clients:    make(map[*Client]bool),
+		rooms:      make(map[string]map[*Client]bool),
 	}
 }
 
@@ -47,26 +52,74 @@ func (h *Hub) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			// Context was cancelled, shut down the hub
-			for client := range h.clients {
-				close(client.send)
+			for _, clients := range h.rooms {
+				for client := range clients {
+					close(client.send)
+				}
 			}
 			return
 		case client := <-h.register:
-			h.clients[client] = true
-		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.send)
+			// Client joins their designated room
+			if client.room == "" {
+				client.room = "general"
 			}
-		case message := <-h.Broadcast:
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
+			if h.rooms[client.room] == nil {
+				h.rooms[client.room] = make(map[*Client]bool)
+			}
+			h.rooms[client.room][client] = true
+
+			// Send join notification to room
+			joinMsg := models.NewSystemMessage(client.room, fmt.Sprintf("%s joined the chat", client.username))
+			h.broadcastToRoom(client.room, joinMsg)
+
+			log.Printf("[Hub] User %s joined room %s", client.username, client.room)
+
+		case client := <-h.unregister:
+			if clients, ok := h.rooms[client.room]; ok {
+				if _, ok := clients[client]; ok {
+					delete(clients, client)
 					close(client.send)
-					delete(h.clients, client)
+
+					// Clean up empty rooms
+					if len(clients) == 0 {
+						delete(h.rooms, client.room)
+					}
+
+					// Send leave notification to room
+					leaveMsg := models.NewSystemMessage(client.room, fmt.Sprintf("%s left the chat", client.username))
+					h.broadcastToRoom(client.room, leaveMsg)
+
+					log.Printf("[Hub] User %s left room %s", client.username, client.room)
 				}
 			}
+
+		case message := <-h.Broadcast:
+			// Broadcast message to all clients in the specified room
+			h.broadcastToRoom(message.Room, message)
+		}
+	}
+}
+
+// broadcastToRoom sends a message to all clients in a specific room
+func (h *Hub) broadcastToRoom(room string, message models.WebSocketMessage) {
+	clients, ok := h.rooms[room]
+	if !ok {
+		return
+	}
+
+	// Marshal message to JSON
+	data, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("[Hub] Error marshaling message: %v", err)
+		return
+	}
+
+	for client := range clients {
+		select {
+		case client.send <- data:
+		default:
+			close(client.send)
+			delete(clients, client)
 		}
 	}
 }
