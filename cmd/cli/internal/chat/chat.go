@@ -2,6 +2,7 @@ package chat
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/tnphucccc/mangahub/cmd/cli/internal/config"
+	"github.com/tnphucccc/mangahub/pkg/models"
 )
 
 func HandleChatCommand() {
@@ -34,9 +36,11 @@ func HandleChatCommand() {
 }
 
 func printChatUsage() {
-	fmt.Println("Usage: mangahub chat <subcommand>")
+	fmt.Println("Usage: mangahub chat <subcommand> [flags]")
 	fmt.Println("\nSubcommands:")
 	fmt.Println("  join                 Join the real-time chat")
+	fmt.Println("\nFlags:")
+	fmt.Println("  --manga-id <id>      Join manga-specific chat room (default: general)")
 }
 
 func chatJoin() {
@@ -51,8 +55,33 @@ func chatJoin() {
 		os.Exit(1)
 	}
 
-	u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:%d", cliConfig.Server.Host, cliConfig.Server.WebSocketPort), Path: "/ws"}
-	log.Printf("connecting to %s", u.String())
+	// Parse flags for manga-id
+	var mangaID string
+	for i := 3; i < len(os.Args); i++ {
+		if os.Args[i] == "--manga-id" && i+1 < len(os.Args) {
+			mangaID = os.Args[i+1]
+			break
+		}
+	}
+
+	// Determine room name
+	room := "general"
+	if mangaID != "" {
+		room = mangaID
+	}
+
+	// Build WebSocket URL with username and room as query parameters
+	u := url.URL{
+		Scheme: "ws",
+		Host:   fmt.Sprintf("%s:%d", cliConfig.Server.Host, cliConfig.Server.WebSocketPort),
+		Path:   "/ws",
+	}
+	q := u.Query()
+	q.Set("username", cliConfig.User.Username)
+	q.Set("room", room)
+	u.RawQuery = q.Encode()
+
+	fmt.Printf("Connecting to WebSocket chat server at %s...\n", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -62,15 +91,27 @@ func chatJoin() {
 
 	done := make(chan struct{})
 
+	// Goroutine to receive messages
 	go func() {
 		defer close(done)
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				log.Println("read:", err)
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("Connection closed: %v", err)
+				}
 				return
 			}
-			log.Printf("recv: %s", message)
+
+			// Parse the incoming message
+			var wsMsg models.WebSocketMessage
+			if err := json.Unmarshal(message, &wsMsg); err != nil {
+				fmt.Printf("Error parsing message: %v\n", err)
+				continue
+			}
+
+			// Display the message with proper formatting
+			displayMessage(wsMsg)
 		}
 	}()
 
@@ -78,26 +119,32 @@ func chatJoin() {
 	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Connected to chat. Type your message and press Enter to send. Press Ctrl+C to exit.")
+
+	// Display welcome message
+	fmt.Printf("\n✓ Connected to Chat Room: #%s\n", room)
+	fmt.Println("───────────────────────────────────────────────────────────")
+	fmt.Println("\nYou are now in chat. Type your message and press Enter.")
+	fmt.Println("Press Ctrl+C to leave.")
+	fmt.Print("> ")
 
 	for {
 		select {
 		case <-done:
 			return
 		case <-interrupt:
-			log.Println("interrupt")
+			fmt.Println("\nLeaving chat...")
 
-			// Cleanly close the connection by sending a close message and then
-			// waiting (with timeout) for the server to close the connection.
+			// Cleanly close the connection
 			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
-				log.Println("write close:", err)
+				log.Println("Error closing connection:", err)
 				return
 			}
 			select {
 			case <-done:
 			case <-time.After(time.Second):
 			}
+			fmt.Println("✓ Disconnected from chat server")
 			return
 		default:
 			// Non-blocking read from stdin
@@ -116,23 +163,51 @@ func chatJoin() {
 			case line := <-lineChan:
 				line = strings.TrimSpace(line)
 				if line != "" {
-					err = c.WriteMessage(websocket.TextMessage, []byte(line))
+					// Create a chat message
+					chatMsg := models.NewChatMessage(cliConfig.User.Username, room, line)
+					msgBytes, err := json.Marshal(chatMsg)
 					if err != nil {
-						log.Println("write:", err)
+						fmt.Printf("Error creating message: %v\n", err)
+						continue
+					}
+
+					err = c.WriteMessage(websocket.TextMessage, msgBytes)
+					if err != nil {
+						log.Println("Error sending message:", err)
 						return
 					}
 				}
 				fmt.Print("> ")
 			case err := <-errChan:
-				log.Println("read string:", err)
+				log.Println("Error reading input:", err)
 				return
 			case <-done:
 				return
 			case <-interrupt:
 				// Second interrupt, force exit
-				log.Println("second interrupt, forcing exit")
+				fmt.Println("\nForcing exit...")
 				return
 			}
 		}
+	}
+}
+
+// displayMessage formats and displays a WebSocket message
+func displayMessage(msg models.WebSocketMessage) {
+	timestamp := msg.Timestamp.Format("15:04")
+
+	switch msg.Type {
+	case models.WSChatMessage:
+		// Display chat message with [username] prefix
+		fmt.Printf("\r[%s] %s: %s\n> ", timestamp, msg.Username, msg.Content)
+	case models.WSSystemMessage:
+		// Display system message
+		fmt.Printf("\r[%s] * %s\n> ", timestamp, msg.Content)
+	case models.WSError:
+		// Display error message
+		fmt.Printf("\r✗ Error: %s\n> ", msg.Content)
+	default:
+		// Display unknown message type
+		fmt.Printf("\r[%s] %s\n> ", timestamp, msg.Content)
 	}
 }
