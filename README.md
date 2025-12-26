@@ -446,8 +446,8 @@ This project is for educational purposes as part of IT096IU coursework.
 
 ## 👥 Team
 
-- [Your Name] - [Your Student ID]
-- [Team Member] - [Student ID]
+- Tran Nguyen Phuc - ITCSIU21097
+- Nguyen Mach Khang Huy - ITCSIU21072
 
 **Instructor**: Lê Thanh Sơn - Nguyễn Trung Nghĩa
 
