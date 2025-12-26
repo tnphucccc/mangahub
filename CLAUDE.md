@@ -11,6 +11,7 @@ This document provides essential context for AI coding assistants working on the
 **MangaHub** is a manga tracking system built for a university Network Programming course (IT096IU). It's an **academic project** demonstrating network protocols in Go, not a production application.
 
 ### Key Facts
+
 - **Language**: Go 1.19+
 - **Timeline**: 10-11 weeks (student team project)
 - **Team Size**: 2 students
@@ -18,7 +19,9 @@ This document provides essential context for AI coding assistants working on the
 - **Grade Weight**: 30% of course grade (100 points total)
 
 ### Critical Requirements
+
 This project **MUST** implement all 5 protocols:
+
 1. ✅ HTTP REST API (25 pts) - User auth, manga CRUD, library management
 2. ✅ TCP Server (20 pts) - Real-time progress synchronization
 3. ✅ UDP Broadcaster (15 pts) - Chapter release notifications
@@ -47,6 +50,7 @@ mangahub/
 ```
 
 ### Why This Structure?
+
 - **Academic Grading**: Instructors need to easily find each protocol implementation
 - **Protocol Isolation**: Each server can be tested independently
 - **Team Collaboration**: 2 students work on different servers without conflicts
@@ -57,13 +61,16 @@ mangahub/
 ## Design Principles
 
 ### 1. **Clarity Over Cleverness**
+
 This is a learning project. Code should be:
+
 - ✅ Easy to understand for junior developers
-- ✅ Well-commented (explain *why*, not *what*)
+- ✅ Well-commented (explain _why_, not _what_)
 - ✅ Following Go standard practices
 - ❌ NOT overly optimized or using obscure patterns
 
 **Example - GOOD:**
+
 ```go
 // Broadcast progress update to all connected TCP clients
 // Uses goroutines to prevent blocking on slow clients
@@ -77,6 +84,7 @@ func (s *Server) BroadcastProgress(update ProgressUpdate) {
 ```
 
 **Example - BAD:**
+
 ```go
 // Too clever, hard to grade
 func (s *Server) BroadcastProgress(u ProgressUpdate) {
@@ -88,6 +96,7 @@ func (s *Server) BroadcastProgress(u ProgressUpdate) {
 ```
 
 ### 2. **Separate Protocol Implementations**
+
 Each protocol lives in its own package:
 
 ```go
@@ -113,6 +122,7 @@ type NotificationServer struct { /* UDP-specific fields */ }
 **Reason**: Instructors grade each protocol separately.
 
 ### 3. **Shared Business Logic**
+
 Don't duplicate code across servers:
 
 ```go
@@ -145,6 +155,7 @@ func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 ## Technical Stack & Constraints
 
 ### Required Libraries
+
 ```go
 // Core framework (specified in project doc)
 "github.com/gin-gonic/gin"              // HTTP web framework
@@ -156,12 +167,14 @@ func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 ```
 
 ### Database Constraints
+
 - ✅ **Use SQLite3** (specified in requirements)
 - ✅ **3 core tables**: users, manga, user_progress
 - ❌ **Do NOT suggest PostgreSQL/MySQL** unless specifically asked for bonus features
 - ❌ **No ORMs** (use database/sql directly - demonstrates SQL knowledge)
 
 ### Data Constraints
+
 - Must have **200 manga total** (100 manual + 100 from MangaDx API)
 - Must store manga as **JSON files** in `data/manga/` directory
 - Minimum **30-40 different series** across genres
@@ -171,9 +184,11 @@ func (s *Server) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 ## Coding Standards
 
 ### Go Style Guide
+
 Follow [Effective Go](https://go.dev/doc/effective_go) and [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md):
 
 **Naming Conventions:**
+
 ```go
 // ✅ Exported types (PascalCase)
 type MangaService struct {}
@@ -189,6 +204,7 @@ package manga  // not manga_service
 ```
 
 **Error Handling:**
+
 ```go
 // ✅ Always check errors explicitly
 result, err := doSomething()
@@ -201,6 +217,7 @@ result, _ := doSomething()  // FORBIDDEN
 ```
 
 **Concurrency:**
+
 ```go
 // ✅ Use goroutines for I/O-bound tasks
 go func() {
@@ -218,6 +235,7 @@ updates := make(chan ProgressUpdate, 100)
 ### Project-Specific Conventions
 
 **1. Handler → Service → Repository Pattern**
+
 ```go
 // HTTP Layer (internal/manga/handler.go)
 func (h *Handler) GetManga(c *gin.Context) {
@@ -237,6 +255,7 @@ func (r *Repository) FindByID(id string) (*models.Manga, error) {
 ```
 
 **2. Models in pkg/models/**
+
 ```go
 // ✅ All data structures in pkg/models/
 package models
@@ -253,6 +272,7 @@ type Manga struct {
 ```
 
 **3. Configuration via YAML**
+
 ```yaml
 # configs/dev.yaml
 server:
@@ -274,6 +294,7 @@ database:
 ### HTTP REST API (internal/manga/, internal/user/, etc.)
 
 **Required Endpoints:**
+
 ```go
 // Authentication
 POST   /auth/register
@@ -288,6 +309,7 @@ PUT    /users/progress     // Update reading progress
 ```
 
 **Patterns to Use:**
+
 ```go
 // ✅ Gin framework with middleware
 router := gin.Default()
@@ -308,12 +330,14 @@ api := router.Group("/api/v1")
 ### TCP Progress Sync (internal/tcp/)
 
 **Key Requirements:**
+
 - Accept multiple concurrent connections
 - Broadcast progress updates to all connected clients
 - Use JSON for messages over TCP
 - Handle graceful disconnections
 
 **Pattern to Use:**
+
 ```go
 type ProgressSyncServer struct {
     Port        string
@@ -343,11 +367,13 @@ func (s *ProgressSyncServer) broadcastLoop() {
 ### UDP Notifications (internal/udp/)
 
 **Key Requirements:**
+
 - Listen for client registrations
 - Store client UDP addresses
 - Broadcast notifications to all registered clients
 
 **Pattern to Use:**
+
 ```go
 type NotificationServer struct {
     Port    string
@@ -370,11 +396,13 @@ func (s *NotificationServer) Broadcast(notif Notification) {
 ### WebSocket Chat (internal/websocket/)
 
 **Key Requirements:**
+
 - Hub pattern for message broadcasting
 - Handle user join/leave
 - Support multiple chat rooms (bonus)
 
 **Pattern to Use (Hub-Based):**
+
 ```go
 type Hub struct {
     Clients    map[*Client]bool
@@ -403,11 +431,13 @@ func (h *Hub) Run() {
 ### gRPC Service (internal/grpc/ + proto/)
 
 **Key Requirements:**
+
 - Define 2-3 services in .proto files
 - Implement unary RPC calls
 - Use for internal service-to-service communication
 
 **Pattern to Use:**
+
 ```protobuf
 // proto/manga.proto
 syntax = "proto3";
@@ -504,6 +534,7 @@ CREATE INDEX idx_manga_status ON manga(status);
 ### What Must Be Tested
 
 **1. Unit Tests (in same package):**
+
 ```go
 // internal/manga/service_test.go
 func TestMangaService_Search(t *testing.T) {
@@ -512,6 +543,7 @@ func TestMangaService_Search(t *testing.T) {
 ```
 
 **2. Integration Tests (test/ directory):**
+
 ```go
 // test/integration/http_test.go
 func TestHTTPServer_MangaEndpoints(t *testing.T) {
@@ -522,6 +554,7 @@ func TestHTTPServer_MangaEndpoints(t *testing.T) {
 ```
 
 **3. Protocol Tests (demonstrate each protocol works):**
+
 ```go
 // test/integration/tcp_test.go
 func TestTCPServer_ProgressSync(t *testing.T) {
@@ -532,6 +565,7 @@ func TestTCPServer_ProgressSync(t *testing.T) {
 ```
 
 ### Testing Commands
+
 ```bash
 # Run all tests
 make test
@@ -551,6 +585,7 @@ go test ./internal/tcp/...
 ## Common Development Tasks
 
 ### Starting All Servers
+
 ```bash
 # Development mode (separate terminals)
 go run cmd/api-server/main.go
@@ -563,6 +598,7 @@ docker-compose up
 ```
 
 ### Database Operations
+
 ```bash
 # Run migrations
 make migrate-up
@@ -578,6 +614,7 @@ make reset-db
 ```
 
 ### Generating Code
+
 ```bash
 # Generate gRPC code from .proto files
 make proto
@@ -587,6 +624,7 @@ make mocks
 ```
 
 ### Data Import
+
 ```bash
 # Fetch 100 manga from MangaDx API
 go run scripts/import_mangadex.go
@@ -629,11 +667,13 @@ go run scripts/import_mangadex.go
 ## When to Suggest Bonus Features
 
 The project allows bonus features for extra credit. Suggest these **ONLY IF**:
+
 - ✅ Core 5 protocols are fully implemented
 - ✅ Student explicitly asks for bonus ideas
 - ✅ Time allows (Week 8+)
 
 **Approved Bonus Features (from spec):**
+
 - Docker Compose setup (10 pts) - **HIGH PRIORITY**
 - Advanced search with filters (5 pts)
 - User reviews & ratings (8 pts)
@@ -649,6 +689,7 @@ The project allows bonus features for extra credit. Suggest these **ONLY IF**:
 When adding a new feature (e.g., "User Reviews"), follow this order:
 
 1. **Model** (`pkg/models/review.go`)
+
    ```go
    type Review struct {
        ID        string
@@ -661,29 +702,34 @@ When adding a new feature (e.g., "User Reviews"), follow this order:
    ```
 
 2. **Migration** (`migrations/004_create_reviews.sql`)
+
    ```sql
    CREATE TABLE reviews (...);
    ```
 
 3. **Repository** (`internal/review/repository.go`)
+
    ```go
    func (r *Repository) Create(review *models.Review) error
    func (r *Repository) FindByMangaID(mangaID string) ([]models.Review, error)
    ```
 
 4. **Service** (`internal/review/service.go`)
+
    ```go
    func (s *Service) SubmitReview(review *models.Review) error
    func (s *Service) GetMangaReviews(mangaID string) ([]models.Review, error)
    ```
 
 5. **Handler** (`internal/review/handler.go`)
+
    ```go
    func (h *Handler) Submit(c *gin.Context)
    func (h *Handler) GetByManga(c *gin.Context)
    ```
 
 6. **Routes** (add to `cmd/api-server/main.go`)
+
    ```go
    api.POST("/manga/:id/reviews", reviewHandler.Submit)
    api.GET("/manga/:id/reviews", reviewHandler.GetByManga)
@@ -698,6 +744,7 @@ When adding a new feature (e.g., "User Reviews"), follow this order:
 ### Common Issues & Solutions
 
 **Problem: TCP connections not closing properly**
+
 ```go
 // ✅ Always use defer
 func handleConnection(conn net.Conn) {
@@ -707,6 +754,7 @@ func handleConnection(conn net.Conn) {
 ```
 
 **Problem: Database locked errors (SQLite)**
+
 ```go
 // ✅ Use connection pooling
 db.SetMaxOpenConns(1)  // SQLite doesn't support concurrent writes
@@ -714,6 +762,7 @@ db.SetMaxIdleConns(1)
 ```
 
 **Problem: Goroutine leaks**
+
 ```go
 // ✅ Always provide exit mechanism
 func (s *Server) Start() error {
@@ -725,6 +774,7 @@ func (s *Server) Start() error {
 ```
 
 **Problem: JSON unmarshaling fails**
+
 ```go
 // ✅ Check for pointer vs value
 var manga models.Manga
@@ -736,44 +786,52 @@ json.Unmarshal(data, &manga)  // Note the &
 ## Project Milestones (For Progress Tracking)
 
 ### Week 1-2: Foundation ✅
+
 - [ ] Project structure created
 - [ ] Database schema + migrations
 - [ ] User authentication (register, login, JWT)
 - [ ] Basic manga CRUD (HTTP)
 
 ### Week 3-4: TCP Protocol ✅
+
 - [ ] TCP server accepts connections
 - [ ] Progress update broadcasting
 - [ ] Client connection handling
 - [ ] Integration with HTTP API
 
 ### Week 5: UDP Protocol ✅
+
 - [ ] UDP server listening
 - [ ] Client registration
 - [ ] Notification broadcasting
 
 ### Week 6: WebSocket Protocol ✅
+
 - [ ] WebSocket hub implemented
 - [ ] Real-time chat working
 - [ ] User join/leave notifications
 
 ### Week 7: gRPC Protocol ✅
+
 - [ ] .proto files defined
 - [ ] gRPC server running
 - [ ] 2-3 services implemented
 - [ ] Integration tests passing
 
 ### Week 8: Integration ✅
+
 - [ ] All 5 protocols working together
 - [ ] Data collection complete (200 manga)
 - [ ] End-to-end testing
 
 ### Week 9: Polish ✅
+
 - [ ] CLI tool completed
 - [ ] Docker Compose working
 - [ ] Documentation finished
 
 ### Week 10: Demo Preparation ✅
+
 - [ ] Demo script prepared
 - [ ] All protocols demonstrated
 - [ ] Bonus features (if time)
@@ -802,6 +860,7 @@ json.Unmarshal(data, &manga)  // Note the &
 ## Final Reminders
 
 ### For AI Assistants:
+
 - ✅ This is a **learning project**, not production code
 - ✅ **Clarity > Optimization** (students must understand their code)
 - ✅ **All 5 protocols** must be clearly separated and demonstrated
@@ -811,8 +870,18 @@ json.Unmarshal(data, &manga)  // Note the &
 - ❌ Don't suggest **removing protocols** or requirements
 
 ### For Developers:
+
 - Read the project specification PDFs in the repo root
-- Check `/docs/architecture.md` for design decisions
+- Check documentation in `/docs/`:
+  - `/docs/architecture.md` - System architecture and protocol integration
+  - `/docs/database.md` - Database schema, migrations, and queries
+  - `/docs/deployment.md` - Deployment guides (local, Docker, production)
+  - `/docs/web-frontend.md` - Next.js web application documentation
+  - `/docs/api-documentation.md` - HTTP REST API reference
+  - `/docs/tcp-documentation.md` - TCP progress sync protocol
+  - `/docs/udp-documentation.md` - UDP notification protocol
+  - `/docs/websocket-documentation.md` - WebSocket chat protocol
+  - `/docs/grpc-documentation.md` - gRPC service reference
 - Run `make help` to see all available commands
 - Ask on the team Discord before making major changes
 
@@ -834,4 +903,4 @@ json.Unmarshal(data, &manga)  // Note the &
 
 ---
 
-*This file should be read by AI assistants before providing code suggestions or making modifications to the MangaHub project.*
+_This file should be read by AI assistants before providing code suggestions or making modifications to the MangaHub project._

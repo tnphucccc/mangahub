@@ -119,10 +119,13 @@ The project includes a command-line interface (CLI) for interacting with the bac
 
 2.  **Run the CLI**
     You can see the available commands by running:
+
     ```bash
     ./bin/cli help
     ```
+
     This will output:
+
     ```
     MangaHub CLI - Manga Tracking System
 
@@ -143,6 +146,7 @@ The project includes a command-line interface (CLI) for interacting with the bac
     For more information on a command:
       mangahub <command> help
     ```
+
     **Note:** Most CLI commands are currently not implemented and are for demonstration purposes only.
 
 ---
@@ -244,8 +248,11 @@ go run test/tcp-client/main.go -token $TOKEN
 ### 4. WebSocket Chat (15 points)
 
 - Real-time manga discussions
+- Multi-room support (per manga, general chat)
 - User join/leave notifications
 - Message broadcasting
+
+**📖 Full WebSocket Documentation:** [docs/websocket-documentation.md](./docs/websocket-documentation.md)
 
 ### 5. gRPC Internal Service (10 points)
 
@@ -362,13 +369,28 @@ Follow the pattern:
 
 ## 📚 Documentation
 
+### Protocol Documentation
+
 - **[API Documentation](./docs/api-documentation.md)** - Complete REST API reference
 - **[TCP Documentation](./docs/tcp-documentation.md)** - TCP progress sync protocol
+- **[UDP Documentation](./docs/udp-documentation.md)** - UDP notification broadcasting
+- **[WebSocket Documentation](./docs/websocket-documentation.md)** - WebSocket chat protocol
 - **[gRPC Documentation](./docs/grpc-documentation.md)** - gRPC service reference
-- [Project Specification](./mangahub_project_spec.pdf)
-- [Use Case Specification](<./mangahub_usecase%20(reference).pdf>)
-- [CLI Manual](<./mangahub_cli_manual%20(reference).pdf>)
-- [CLAUDE.md](./CLAUDE.md) - AI assistant context
+
+### System Documentation
+
+- **[Architecture Documentation](./docs/architecture.md)** - System design and integration
+- **[Database Documentation](./docs/database.md)** - Schema, migrations, queries
+- **[Deployment Guide](./docs/deployment.md)** - Local, Docker, and production deployment
+- **[Web Frontend Guide](./docs/web-frontend.md)** - Next.js application documentation
+
+### Project Resources
+
+- [Project Specification](./mangahub_project_spec.pdf) - Official requirements
+- [Use Case Specification](<./mangahub_usecase%20(reference).pdf>) - Use cases
+- [CLI Manual](<./mangahub_cli_manual%20(reference).pdf>) - CLI reference
+- [Monorepo Structure](./MONOREPO.md) - Workspace organization
+- [AI Assistant Context](./CLAUDE.md) - Development guidelines
 
 ---
 
@@ -377,7 +399,6 @@ Follow the pattern:
 ### Grading Criteria (100 points)
 
 - **Core Protocol Implementation (40 pts)**
-
   - HTTP REST API: 15 pts
   - TCP Progress Sync: 13 pts
   - UDP Notifications: 18 pts
@@ -385,20 +406,17 @@ Follow the pattern:
   - gRPC Service: 7 pts
 
 - **System Integration (20 pts)**
-
   - Database Integration: 8 pts
   - Service Communication: 7 pts
   - Error Handling: 3 pts
   - Code Organization: 2 pts
 
 - **Code Quality (10 pts)**
-
   - Go Idioms: 5 pts
   - Testing: 3 pts
   - Documentation: 2 pts
 
 - **Documentation & Demo (10 pts)**
-
   - Technical Documentation: 5 pts
   - Live Demonstration: 5 pts
 
