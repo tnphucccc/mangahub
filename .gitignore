@@ -28,6 +28,13 @@ build/
 .next/
 .turbo/
 
+# Root binaries (CLI executables)
+/mangahub
+/api-server
+/tcp-server
+/udp-server
+/grpc-server
+
 # IDEs and editors
 .vscode/
 .idea/

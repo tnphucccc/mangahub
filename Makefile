@@ -44,9 +44,23 @@ run-udp: ## Run UDP server
 run-grpc: ## Run gRPC server
 	go run ./cmd/grpc-server
 
-run-all: ## Run all servers (requires tmux or multiple terminals)
-	@echo "Starting all servers..."
-	@echo "Use 'make run-api', 'make run-tcp', etc. in separate terminals"
+run-all: ## Run all servers using Docker Compose
+	@echo "Starting all servers with Docker Compose..."
+	docker-compose up -d
+	@echo "✓ All servers started!"
+	@echo "  API Server:   http://localhost:8080"
+	@echo "  WebSocket:    ws://localhost:9093"
+	@echo "  TCP Server:   localhost:9090"
+	@echo "  UDP Server:   localhost:9091"
+	@echo "  gRPC Server:  localhost:9092"
+	@echo ""
+	@echo "Use 'make logs' to view logs"
+	@echo "Use 'make stop-all' to stop all servers"
+
+stop-all: ## Stop all servers
+	@echo "Stopping all servers..."
+	docker-compose down
+	@echo "✓ All servers stopped"
 
 # ==========================================
 # Code Generation
