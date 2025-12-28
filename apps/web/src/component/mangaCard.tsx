@@ -10,10 +10,10 @@ interface MangaCardProps {
 }
 
 const MangaCard = ({ manga, onClick }: MangaCardProps) => {
-  // Use a placeholder if the cover image is missing
   const coverImage = manga.cover_image_url?.includes('mangadex')
     ? manga.cover_image_url
     : defaultCover.src
+
   return (
     <button
       onClick={onClick}
@@ -22,7 +22,7 @@ const MangaCard = ({ manga, onClick }: MangaCardProps) => {
       <Image
         width={400}
         height={600}
-        src={coverImage}
+        src={coverImage!}
         alt={`Cover for ${manga.title}`}
         className="w-full h-72 object-cover"
       />

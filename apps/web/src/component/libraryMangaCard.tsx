@@ -43,12 +43,16 @@ const LibraryMangaCard = ({ item, onUpdate }: LibraryMangaCardProps) => {
     setIsSaving(false)
   }
 
+  const coverImage = manga.cover_image_url?.includes('mangadex')
+    ? manga.cover_image_url
+    : defaultCover.src
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
       <Image
         width={400}
         height={600}
-        src={manga.cover_image_url || defaultCover.src}
+        src={coverImage!}
         alt={`Cover for ${manga.title}`}
         className="w-full h-48 object-cover"
       />
