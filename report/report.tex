@@ -19,14 +19,21 @@
 \begin{titlepage}
     \centering
     \vspace*{1cm}
-    {\huge \textbf{Project Title}} \\
+    {\huge \textbf{MangaHub: A Multi-Protocol Network Programming System}} \\
+    \vspace{0.5cm}
+    {\large Network Programming Project Report} \\
     \vspace{1.5cm}
-    {\large \textbf{Author Name}} \\
+    {\large \textbf{IT096IU - Network Programming}} \\
+    \vspace{0.5cm}
+    {\large Instructor: Dr. Lê Thanh Sơn} \\
     \vfill
-    A report submitted in partial fulfillment of the requirements for... \\
+    A project report submitted in partial fulfillment of the requirements for \\
+    the Network Programming course (IT096IU) \\
     \vspace{0.8cm}
     Department of Computer Science \\
-    University Name \\
+    International University \\
+    Vietnam National University - Ho Chi Minh City \\
+    \vspace{0.5cm}
     \today
 \end{titlepage}
 % --- Front Matter ---
@@ -41,8 +48,8 @@
     \begin{tabular}{|l|p{10cm}|}
         \hline
         \textbf{Member Name} & \textbf{Contribution} \\ \hline
-        Student 1 & Implementation of TCP Sync Server and Chapter 4 writing. \\ \hline
-        Student 2 & System Architecture design and Database schema. \\ \hline
+        Tran Nguyen Phuc & Backend development (HTTP API, TCP Server, UDP Server), Database design and implementation, Testing and quality assurance, Deployment and DevOps, Report writing (Chapters 3-5) \\ \hline
+        Nguyen Mach Khang Huy & Frontend development (Next.js, WebSocket integration), gRPC service implementation, System architecture documentation, Report writing (Chapters 1-2, 6) \\ \hline
     \end{tabular}
     \caption{Project Contribution Summary}
 \end{table}
@@ -287,4 +294,203 @@ While the current implementation meets all core requirements, there are several 
 \end{itemize}
 
 \section{Acknowledgment}
-We would like to express our sincere gratitude to our instructors and peers at the International University for their guidance, support, and valuable feedback throughout the course of this project. Their insights were instrumental in shaping the final application.\end{document}
+We would like to express our sincere gratitude to our instructors and peers at the International University for their guidance, support, and valuable feedback throughout the course of this project. Their insights were instrumental in shaping the final application.
+
+% --- References ---
+\begin{thebibliography}{10}
+
+\bibitem{kurose2021}
+Kurose, J. F., \& Ross, K. W. (2021). \textit{Computer Networking: A Top-Down Approach} (8th ed.). Pearson Education.
+
+\bibitem{woodbeck2021}
+Woodbeck, A. (2021). \textit{Network Programming with Go: Essential Skills for Using and Securing Networks}. No Starch Press.
+
+\bibitem{websocket-rfc}
+Fette, I., \& Melnikov, A. (2011). The WebSocket Protocol (RFC 6455). Internet Engineering Task Force. Retrieved from \url{https://datatracker.ietf.org/doc/html/rfc6455}
+
+\bibitem{fielding2000}
+Fielding, R. T. (2000). \textit{Architectural Styles and the Design of Network-based Software Architectures} [Doctoral dissertation, University of California, Irvine]. Retrieved from \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm}
+
+\bibitem{grpc-docs}
+Google. (2023). gRPC Documentation: Introduction to gRPC. Retrieved from \url{https://grpc.io/docs/what-is-grpc/introduction/}
+
+\bibitem{gin-docs}
+Gin Web Framework. (2023). Gin Web Framework Documentation. Retrieved from \url{https://gin-gonic.com/docs/}
+
+\bibitem{gorilla-websocket}
+Gorilla Web Toolkit. (2023). Gorilla WebSocket Package Documentation. Retrieved from \url{https://pkg.go.dev/github.com/gorilla/websocket}
+
+\bibitem{effective-go}
+The Go Programming Language. (2023). Effective Go. Retrieved from \url{https://go.dev/doc/effective_go}
+
+\bibitem{sqlite-docs}
+SQLite Consortium. (2023). SQLite Documentation. Retrieved from \url{https://www.sqlite.org/docs.html}
+
+\bibitem{jwt-rfc}
+Internet Engineering Task Force (IETF). (2015). JSON Web Token (JWT) (RFC 7519). Retrieved from \url{https://datatracker.ietf.org/doc/html/rfc7519}
+
+\end{thebibliography}
+
+% --- Appendices ---
+\appendix
+
+\chapter{API Endpoints Reference}
+
+\section*{Authentication Endpoints}
+\begin{itemize}
+    \item \texttt{POST /api/v1/auth/register} - Register new user
+    \item \texttt{POST /api/v1/auth/login} - Login and receive JWT token
+    \item \texttt{POST /api/v1/auth/logout} - Logout (client-side token removal)
+    \item \texttt{POST /api/v1/auth/refresh} - Refresh access token
+    \item \texttt{GET /api/v1/auth/me} - Get current user profile
+\end{itemize}
+
+\section*{Manga Endpoints}
+\begin{itemize}
+    \item \texttt{GET /api/v1/manga} - List manga (paginated)
+    \item \texttt{GET /api/v1/manga/:id} - Get manga details
+    \item \texttt{POST /api/v1/manga} - Create manga (admin only)
+    \item \texttt{PUT /api/v1/manga/:id} - Update manga (admin only)
+    \item \texttt{DELETE /api/v1/manga/:id} - Delete manga (admin only)
+    \item \texttt{GET /api/v1/manga/search} - Search manga by title/author
+\end{itemize}
+
+\section*{Library Endpoints}
+\begin{itemize}
+    \item \texttt{GET /api/v1/library} - Get user's library
+    \item \texttt{POST /api/v1/library/:mangaId} - Add manga to library
+    \item \texttt{DELETE /api/v1/library/:mangaId} - Remove manga from library
+    \item \texttt{GET /api/v1/library/stats} - Get library statistics
+\end{itemize}
+
+\section*{Progress Endpoints}
+\begin{itemize}
+    \item \texttt{GET /api/v1/progress} - Get all progress entries
+    \item \texttt{GET /api/v1/progress/:mangaId} - Get progress for specific manga
+    \item \texttt{PUT /api/v1/progress/:mangaId} - Update reading progress
+    \item \texttt{DELETE /api/v1/progress/:mangaId} - Clear progress
+\end{itemize}
+
+\section*{Health \& Utility}
+\begin{itemize}
+    \item \texttt{GET /health} - Server health check
+    \item \texttt{GET /api/v1/version} - API version information
+\end{itemize}
+
+\textbf{Note}: All protected endpoints require \texttt{Authorization: Bearer <token>} header. Query parameters for pagination: \texttt{?page=1\&limit=20}. Search supports: \texttt{?search=keyword\&genre=action\&status=ongoing}.
+
+\chapter{Database Schema}
+
+\section*{Entity-Relationship Diagram}
+
+\subsection*{USERS (Primary Entity)}
+\begin{itemize}
+    \item \texttt{id} (PK): UUID
+    \item \texttt{username}: String, Unique
+    \item \texttt{email}: String, Unique
+    \item \texttt{password\_hash}: String
+    \item \texttt{created\_at}: Timestamp
+    \item \texttt{updated\_at}: Timestamp
+\end{itemize}
+
+\subsection*{MANGA (Primary Entity)}
+\begin{itemize}
+    \item \texttt{id} (PK): UUID
+    \item \texttt{title}: String
+    \item \texttt{author}: String
+    \item \texttt{artist}: String
+    \item \texttt{genres}: JSON Array
+    \item \texttt{status}: Enum(ongoing, completed, hiatus)
+    \item \texttt{total\_chapters}: Integer
+    \item \texttt{description}: Text
+    \item \texttt{cover\_image\_url}: String
+    \item \texttt{created\_at}: Timestamp
+    \item \texttt{updated\_at}: Timestamp
+\end{itemize}
+
+\subsection*{USER\_PROGRESS (Junction Entity)}
+\begin{itemize}
+    \item \texttt{user\_id} (PK, FK): References USERS(id)
+    \item \texttt{manga\_id} (PK, FK): References MANGA(id)
+    \item \texttt{current\_chapter}: Integer
+    \item \texttt{current\_page}: Integer
+    \item \texttt{status}: Enum(reading, completed, plan\_to\_read, dropped)
+    \item \texttt{rating}: Integer (1-10)
+    \item \texttt{notes}: Text
+    \item \texttt{updated\_at}: Timestamp
+\end{itemize}
+
+\subsection*{Relationships}
+\begin{itemize}
+    \item USERS (1) $\leftrightarrow$ (M) USER\_PROGRESS: One user has many progress entries
+    \item MANGA (1) $\leftrightarrow$ (M) USER\_PROGRESS: One manga tracked by many users
+    \item USERS (1) $\leftrightarrow$ (M) USER\_LIBRARY: One user has many library entries
+    \item MANGA (1) $\leftrightarrow$ (M) USER\_LIBRARY: One manga in many users' libraries
+\end{itemize}
+
+\subsection*{Database Indexes}
+\begin{itemize}
+    \item \texttt{idx\_manga\_title} ON manga(title)
+    \item \texttt{idx\_manga\_author} ON manga(author)
+    \item \texttt{idx\_user\_progress\_updated} ON user\_progress(updated\_at)
+    \item \texttt{idx\_users\_username} ON users(username)
+    \item \texttt{idx\_users\_email} ON users(email)
+\end{itemize}
+
+\chapter{Protocol Message Examples}
+
+\section*{TCP Protocol Messages}
+
+\textbf{Authentication:}
+\begin{lstlisting}[language=json]
+{"type":"auth","token":"eyJhbGci..."}
+\end{lstlisting}
+
+\textbf{Progress Update (Client → Server):}
+\begin{lstlisting}[language=json]
+{"type":"progress_update","manga_id":"manga-123",
+ "current_chapter":42,"current_page":15}
+\end{lstlisting}
+
+\textbf{Progress Broadcast (Server → All User's Clients):}
+\begin{lstlisting}[language=json]
+{"type":"progress_update","user_id":"user-456",
+ "manga_id":"manga-123","current_chapter":42,
+ "current_page":15,"timestamp":"2025-01-15T10:30:00Z"}
+\end{lstlisting}
+
+\section*{UDP Protocol Messages}
+
+\textbf{Subscribe to Notifications:}
+\begin{lstlisting}[language=json]
+{"type":"subscribe","user_id":"user-123",
+ "manga_ids":["manga-456","manga-789"]}
+\end{lstlisting}
+
+\textbf{Chapter Release Notification:}
+\begin{lstlisting}[language=json]
+{"type":"chapter_release","manga_id":"manga-456",
+ "manga_title":"One Piece","chapter":1100,
+ "release_date":"2025-01-15"}
+\end{lstlisting}
+
+\section*{WebSocket Protocol Messages}
+
+\textbf{Join Room:}
+\begin{lstlisting}[language=json]
+{"type":"join","room":"manga-456"}
+\end{lstlisting}
+
+\textbf{Chat Message:}
+\begin{lstlisting}[language=json]
+{"type":"message","room":"manga-456",
+ "content":"This chapter was amazing!"}
+\end{lstlisting}
+
+\textbf{User Joined Notification:}
+\begin{lstlisting}[language=json]
+{"type":"user_joined","room":"manga-456",
+ "username":"alice","user_count":15}
+\end{lstlisting}
+
+\end{document}
