@@ -10,6 +10,14 @@
 \usepackage{titlesec} % For custom chapter titles
 \usepackage{listings} % For code snippets
 \usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{pgf-pie}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
+% Define styles for diagrams
+\tikzstyle{server} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
+\tikzstyle{client} = [rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=green!30]
+\tikzstyle{database} = [cylinder, shape border rotate=90, aspect=0.25, minimum width=2cm, minimum height=1.5cm, draw=black, fill=orange!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
 % --- Settings ---
 \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=cyan}
 \lstset{basicstyle=\ttfamily\small, breaklines=true, frame=single}
@@ -148,6 +156,41 @@ gRPC offers superior performance, streaming capabilities, and strong typing, mak
 \section{System Architecture Overview}
 The MangaHub system is designed as a microservices-style application, with a backend built entirely in Go (Golang). The architecture is centered around five distinct, independently deployable services, each responsible for a specific network protocol. This separation of concerns allows for clear protocol demonstration, fault isolation, and independent scalability.
 
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[node distance=2cm]
+        % Clients
+        \node (web) [client] {Web Browser};
+        \node (cli) [client, below of=web, yshift=-0.5cm] {CLI Client};
+
+        % Servers
+        \node (http) [server, right of=web, xshift=3cm] {HTTP API\\Port 8080};
+        \node (tcp) [server, below of=http, yshift=-0.3cm] {TCP Server\\Port 9090};
+        \node (udp) [server, below of=tcp, yshift=-0.3cm] {UDP Server\\Port 9091};
+        \node (ws) [server, below of=udp, yshift=-0.3cm] {WebSocket\\Port 9093};
+        \node (grpc) [server, below of=ws, yshift=-0.3cm] {gRPC Service\\Port 9092};
+
+        % Database
+        \node (db) [database, right of=tcp, xshift=3cm, yshift=-1cm] {SQLite\\Database};
+
+        % Arrows
+        \draw [arrow] (web) -- node[anchor=south] {HTTP/WS} (http);
+        \draw [arrow] (cli) -- node[anchor=south] {TCP} (tcp);
+        \draw [arrow] (cli) -- node[anchor=south] {UDP} (udp);
+
+        \draw [arrow] (http) -- (db);
+        \draw [arrow] (tcp) -- (db);
+        \draw [arrow] (udp) -- (db);
+        \draw [arrow] (ws) -- (db);
+        \draw [arrow] (grpc) -- (db);
+
+        \draw [arrow, dashed] (http) -- (grpc);
+        \draw [arrow, dashed] (tcp) -- (grpc);
+    \end{tikzpicture}
+    \caption{MangaHub System Architecture Overview}
+    \label{fig:architecture}
+\end{figure}
+
 The project follows the standard Go project layout to maintain a clean and organized codebase:
 \begin{itemize}
     \item \textbf{/cmd}: Contains the main application entry points. Each of the five servers (API, TCP, UDP, WebSocket, gRPC) has its own subdirectory here, containing a `main.go` file responsible for starting that specific server.
@@ -167,6 +210,52 @@ The five core services communicate with each other and with client applications 
 
 \section{Database Design}
 The system utilizes SQLite3 as its database, chosen for its simplicity, file-based nature, and lack of a required server process, making it ideal for a self-contained academic project. The database schema is managed through a versioned migration system located in the `/migrations` directory. Each migration is an SQL file that defines a specific schema change, allowing the database to be version-controlled and easily set up in new environments.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[node distance=3cm]
+        % Users table
+        \node (users) [rectangle, draw, align=left, fill=blue!10] {
+            \textbf{USERS}\\
+            \hline
+            id (PK)\\
+            username\\
+            email\\
+            password\_hash\\
+            created\_at
+        };
+
+        % Manga table
+        \node (manga) [rectangle, draw, align=left, fill=green!10, right of=users, xshift=2cm] {
+            \textbf{MANGA}\\
+            \hline
+            id (PK)\\
+            title\\
+            author\\
+            genres\\
+            status\\
+            total\_chapters
+        };
+
+        % User Progress table
+        \node (progress) [rectangle, draw, align=left, fill=orange!10, below of=users, yshift=-1cm, xshift=2cm] {
+            \textbf{USER\_PROGRESS}\\
+            \hline
+            user\_id (FK)\\
+            manga\_id (FK)\\
+            current\_chapter\\
+            current\_page\\
+            status\\
+            rating
+        };
+
+        % Relationships
+        \draw [arrow] (users) -- node[anchor=east] {1:M} (progress);
+        \draw [arrow] (manga) -- node[anchor=west] {1:M} (progress);
+    \end{tikzpicture}
+    \caption{Database Entity-Relationship Diagram}
+    \label{fig:er-diagram}
+\end{figure}
 
 The core database schema consists of the following tables:
 \begin{itemize}
@@ -212,6 +301,36 @@ The TCP server provides real-time synchronization of a user's reading progress a
     \item \textbf{Messaging Protocol}: Upon connection, a client sends an authentication message (containing a JWT). The server maintains a map of authenticated connections. A simple JSON-based messaging protocol is used to send and receive progress updates. When a progress update is received from one client, the server broadcasts it to all other connected clients belonging to the same user.
 \end{itemize}
 
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[node distance=1.5cm]
+        % Define styles for sequence diagram
+        \tikzstyle{box} = [rectangle, draw, minimum width=2cm, minimum height=0.8cm]
+
+        % Actors
+        \node (client1) [box, fill=green!20] {Client 1};
+        \node (server) [box, fill=blue!20, right of=client1, xshift=3cm] {TCP Server};
+        \node (client2) [box, fill=green!20, right of=server, xshift=3cm] {Client 2};
+
+        % Lifelines
+        \draw [dashed] (client1) -- ++(0,-7);
+        \draw [dashed] (server) -- ++(0,-7);
+        \draw [dashed] (client2) -- ++(0,-7);
+
+        % Messages
+        \draw [arrow] ([yshift=-1cm]client1.south) -- node[above] {1. Connect + Auth} ([yshift=-1cm]server.south);
+        \draw [arrow] ([yshift=-2cm]server.south) -- node[above] {2. Auth OK} ([yshift=-2cm]client1.south);
+
+        \draw [arrow] ([yshift=-3cm]client2.south) -- node[above] {3. Connect + Auth} ([yshift=-3cm]server.south);
+        \draw [arrow] ([yshift=-4cm]server.south) -- node[above] {4. Auth OK} ([yshift=-4cm]client2.south);
+
+        \draw [arrow] ([yshift=-5cm]client1.south) -- node[above] {5. Progress Update} ([yshift=-5cm]server.south);
+        \draw [arrow] ([yshift=-6cm]server.south) -- node[above] {6. Broadcast Update} ([yshift=-6cm]client2.south);
+    \end{tikzpicture}
+    \caption{TCP Synchronization Flow Sequence Diagram}
+    \label{fig:tcp-flow}
+\end{figure}
+
 \section{UDP Notification Server}
 The UDP server is responsible for broadcasting chapter release notifications to clients.
 \begin{itemize}
@@ -240,6 +359,32 @@ While the core of the project is the Go backend, a web frontend provides a user-
 
 \section{Testing Methodology}
 The MangaHub project employs a comprehensive testing strategy based on the testing pyramid. This approach emphasizes a large base of fast and isolated unit tests, a smaller set of integration tests that verify interactions between components, and a few end-to-end tests that validate the entire system. All tests are written using Go's built-in \texttt{testing} package and follow the standard convention of being placed in \texttt{\_test.go} files alongside the code they are testing.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        % Draw pyramid layers
+        \fill[green!40] (0,0) -- (6,0) -- (5,2.5) -- (1,2.5) -- cycle;
+        \fill[blue!40] (1,2.5) -- (5,2.5) -- (4,4.5) -- (2,4.5) -- cycle;
+        \fill[red!40] (2,4.5) -- (4,4.5) -- (3,6) -- cycle;
+
+        % Labels with percentages
+        \node[text width=4cm, align=center] at (3,1.2) {\Large \textbf{Unit Tests}\\70\% of tests\\Fast, Isolated};
+        \node[text width=4cm, align=center] at (3,3.5) {\large \textbf{Integration Tests}\\20\% of tests\\Component Interaction};
+        \node[text width=3cm, align=center] at (3,5.2) {\textbf{E2E Tests}\\10\% of tests\\Full System};
+
+        % Borders
+        \draw[thick] (0,0) -- (6,0) -- (5,2.5) -- (1,2.5) -- cycle;
+        \draw[thick] (1,2.5) -- (5,2.5) -- (4,4.5) -- (2,4.5) -- cycle;
+        \draw[thick] (2,4.5) -- (4,4.5) -- (3,6) -- cycle;
+
+        % Coverage indicator
+        \node[text width=3cm, align=right] at (-0.5,1.2) {High Coverage\\Fast Execution};
+        \node[text width=3cm, align=right] at (-0.5,5.2) {Complete Flow\\Slow Execution};
+    \end{tikzpicture}
+    \caption{Testing Pyramid Strategy}
+    \label{fig:testing-pyramid}
+\end{figure}
 
 \section{Unit Testing}
 Unit tests form the foundation of the project's quality assurance. They are designed to test individual functions or components in isolation.
