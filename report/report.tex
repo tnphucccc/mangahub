@@ -12,9 +12,11 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usepackage{pgf-pie}
+\usepackage{subcaption}
+\usepackage{float}
 \usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
 % Define styles for diagrams
-\tikzstyle{server} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
+\tikzstyle{server} = [rectangle, rounded corners , minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
 \tikzstyle{client} = [rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=green!30]
 \tikzstyle{database} = [cylinder, shape border rotate=90, aspect=0.25, minimum width=2cm, minimum height=1.5cm, draw=black, fill=orange!30]
 \tikzstyle{arrow} = [thick,->,>=stealth]
@@ -38,7 +40,7 @@
 
     {\large \textbf{IT096IU - Net-Centric Programming}} \\
     \vspace{0.5cm}
-    {\large Instructor: Dr. Lê Thanh Sơn} \\
+    {\large Instructor: Dr. Le Thanh Son} \\
     \vfill
     A project report submitted in partial fulfillment of the requirements for \\
     the Net-Centric Programming course (IT096IU) \\
@@ -58,11 +60,11 @@
 \chapter*{Contribution Table}\addcontentsline{toc}{chapter}{Contribution Table}
 \begin{table}[htbp]
     \centering
-    \begin{tabular}{|l|p{10cm}|}
+    \begin{tabular}{|l|l|p{9cm}|} % Added an extra 'l' for the ID column
         \hline
-        \textbf{Member Name} & \textbf{Contribution} \\ \hline
-        Tran Nguyen Phuc & Backend development (HTTP API, TCP Server, UDP Server), Database design and implementation, Testing and quality assurance, Deployment and DevOps, Report writing (Chapters 3-5) \\ \hline
-        Nguyen Mach Khang Huy & Frontend development (Next.js, WebSocket integration), gRPC service implementation, System architecture documentation, Report writing (Chapters 1-2, 6) \\ \hline
+        \textbf{Member Name} & \textbf{ID} & \textbf{Contribution} \\ \hline
+        Tran Nguyen Phuc & ITCSIU21097 & Backend development (HTTP API, TCP Server, UDP Server), Database design and implementation, Testing and quality assurance, Deployment and DevOps, Report writing (Chapters 3-5) \\ \hline
+        Nguyen Mach Khang Huy & ITCSIU21072 & Frontend development (Next.js, WebSocket integration), gRPC service implementation, System architecture documentation, Report writing (Chapters 1-2, 6) \\ \hline
     \end{tabular}
     \caption{Project Contribution Summary}
 \end{table}
@@ -360,7 +362,45 @@ The gRPC server facilitates high-performance, internal communication between the
 \end{itemize}
 
 \section{Web Frontend Application}
-While the core of the project is the Go backend, a web frontend provides a user-friendly interface. It is a separate application built with Next.js, TypeScript, and Tailwind CSS, and it interacts with the backend services via their respective protocols, primarily the HTTP REST API and WebSockets.% --- Chapter 5 ---\chapter{Testing and Results}
+While the core of the project is the Go backend, a web frontend provides a user-friendly interface. It is a separate application built with Next.js, TypeScript, and Tailwind CSS, and it interacts with the backend services via their respective protocols, primarily the HTTP REST API and WebSockets.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/login.png}
+        \caption{Login Page}
+        \label{fig:login}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/register.png}
+        \caption{Register Page}
+        \label{fig:register}
+    \end{subfigure}
+
+    \vspace{1cm} % Add some vertical space between the rows of figures
+
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/homepage.png}
+        \caption{Homepage}
+        \label{fig:homepage}
+    \end{subfigure}
+    
+    \vspace{1cm}
+
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/library.png}
+        \caption{Library Page}
+        \label{fig:library}
+    \end{subfigure}
+    \caption{Web Frontend Application Screens}
+    \label{fig:frontend_screens}
+\end{figure}
+% --- Chapter 5 ---\chapter{Testing and Results}
 
 \section{Testing Methodology}
 The MangaHub project employs a comprehensive testing strategy based on the testing pyramid. This approach emphasizes a large base of fast and isolated unit tests, a smaller set of integration tests that verify interactions between components, and a few end-to-end tests that validate the entire system. All tests are written using Go's built-in \texttt{testing} package and follow the standard convention of being placed in \texttt{\_test.go} files alongside the code they are testing.
