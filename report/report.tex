@@ -1,4 +1,53 @@
-\documentclass[12pt,a4paper]{report}% --- Packages ---\usepackage[utf8]{inputenc}\usepackage[T1]{fontenc}\usepackage{geometry}\geometry{margin=1in}\usepackage{graphicx}\usepackage{booktabs} % For professional tables\usepackage{hyperref} % For clickable links\usepackage{titlesec} % For custom chapter titles\usepackage{listings} % For code snippets\usepackage{xcolor}% --- Settings ---\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=cyan}\lstset{basicstyle=\ttfamily\small, breaklines=true, frame=single}% --- Document Start ---\begin{document}% --- Title Page ---\begin{titlepage}    \centering    \vspace*{1cm}    {\huge \textbf{Project Title}} \\    \vspace{1.5cm}    {\large \textbf{Author Name}} \\    \vfill    A report submitted in partial fulfillment of the requirements for... \\    \vspace{0.8cm}    Department of Computer Science \\    University Name \\    \today\end{titlepage}% --- Front Matter ---\pagenumbering{roman}\tableofcontents\listoffigures\listoftables\chapter*{Contribution Table}\addcontentsline{toc}{chapter}{Contribution Table}\begin{table}[h]    \centering    \begin{tabular}{|l|p{10cm}|}        \hline        \textbf{Member Name} & \textbf{Contribution} \\ \hline        Student 1 & Implementation of TCP Sync Server and Chapter 4 writing. \\ \hline        Student 2 & System Architecture design and Database schema. \\ \hline    \end{tabular}    \caption{Project Contribution Summary}\end{table}\chapter*{Abstract}\addcontentsline{toc}{chapter}{Abstract}
+\documentclass[12pt,a4paper]{report}
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{booktabs} % For professional tables
+\usepackage{hyperref} % For clickable links
+\usepackage{titlesec} % For custom chapter titles
+\usepackage{listings} % For code snippets
+\usepackage{xcolor}
+% --- Settings ---
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=cyan}
+\lstset{basicstyle=\ttfamily\small, breaklines=true, frame=single}
+% --- Document Start ---
+\begin{document}
+% --- Title Page ---
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    {\huge \textbf{Project Title}} \\
+    \vspace{1.5cm}
+    {\large \textbf{Author Name}} \\
+    \vfill
+    A report submitted in partial fulfillment of the requirements for... \\
+    \vspace{0.8cm}
+    Department of Computer Science \\
+    University Name \\
+    \today
+\end{titlepage}
+% --- Front Matter ---
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\tableofcontents
+\listoffigures
+\listoftables
+\chapter*{Contribution Table}\addcontentsline{toc}{chapter}{Contribution Table}
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|p{10cm}|}
+        \hline
+        \textbf{Member Name} & \textbf{Contribution} \\ \hline
+        Student 1 & Implementation of TCP Sync Server and Chapter 4 writing. \\ \hline
+        Student 2 & System Architecture design and Database schema. \\ \hline
+    \end{tabular}
+    \caption{Project Contribution Summary}
+\end{table}
+
+\chapter*{Abstract}\addcontentsline{toc}{chapter}{Abstract}
 MangaHub is a comprehensive network programming project developed as part of the IT096IU Network Programming course at International University, Vietnam National University - Ho Chi Minh City. The system demonstrates the practical implementation of five major network protocols: HTTP, TCP, UDP, WebSocket, and gRPC, integrated into a unified manga and comic tracking application.
 
 The project addresses the real-world challenge of tracking manga reading progress across multiple devices and platforms. Through a client-server architecture built with Go programming language, the system enables users to manage their manga library, synchronize reading progress in real-time, receive notifications about new chapter releases, and participate in community discussions.
@@ -6,7 +55,7 @@ The project addresses the real-world challenge of tracking manga reading progres
 The HTTP REST API server handles user authentication, manga catalog management, and library operations. The TCP synchronization server ensures real-time progress updates across all connected devices using JSON-based messaging. UDP broadcasts deliver instant chapter release notifications to subscribed clients. WebSocket technology powers the real-time chat system for manga discussions, while gRPC facilitates efficient internal service-to-service communication.
 
 The system employs modern software engineering practices including clean architecture, concurrent programming with goroutines, JWT-based authentication, and comprehensive testing strategies. A Next.js web frontend provides an intuitive user interface, while a command-line tool offers advanced functionality for power users. This report presents a detailed examination of the project's design, implementation, testing, and deployment, demonstrating how multiple network protocols can be integrated cohesively to create a practical, scalable, and user-friendly application.
-\newpage\pagenumbering{arabic}% --- Chapter 1 ---\chapter{Introduction}
+\clearpage\chapter{Introduction}
 
 \section{Project Background and Motivation}
 The digital consumption of manga and comics has experienced exponential growth in recent years, with millions of readers worldwide accessing content across multiple platforms and devices. However, this proliferation has created a significant challenge: readers often lose track of their progress when switching between devices, struggle to stay updated on new chapter releases, and lack effective tools for organizing their extensive reading lists.
@@ -28,28 +77,28 @@ The primary objective of this project is to demonstrate comprehensive understand
 \section{Project Scope}
 The MangaHub project encompasses a comprehensive set of features designed to demonstrate network programming concepts while providing practical functionality. The scope has been carefully defined to balance educational objectives with project feasibility within the course timeline. The following sections detail what is included and explicitly excluded from the project.
 
-\subsection*{In Scope}
+\subsection{In Scope}
 The project includes five independent server processes implementing HTTP (port 8080), TCP (port 9090), UDP (port 9091), WebSocket (via HTTP upgrade), and gRPC (port 9092) protocols. User authentication and authorization is implemented using JWT tokens with bcrypt password hashing. The system provides a complete manga catalog with search and filtering capabilities, personal library management for organizing collections, and real-time progress synchronization across multiple client connections. Chapter release notifications are broadcast via UDP to subscribed clients. Multi-room chat functionality enables manga-specific discussions and a general community chat. The SQLite database includes a migration system for schema versioning. A web frontend built with Next.js, TypeScript, and Tailwind CSS provides an intuitive interface, while a command-line tool offers advanced functionality. Comprehensive API documentation, unit and integration testing suites, and Docker containerization complete the deliverables.
 
-\subsection*{Out of Scope}
+\subsection{Out of Scope}
 The project explicitly excludes actual manga reading functionality (viewing pages), payment processing or subscription management, social features beyond basic chat (friend systems, user profiles), mobile native applications, content recommendation algorithms, advanced analytics or reporting features, multi-language internationalization support, and production-grade scalability optimizations. These exclusions allow the team to focus on core network programming demonstrations while maintaining a realistic project scope.
 
 \section{Tools and Technologies}
 The MangaHub project leverages modern development tools and technologies selected for their suitability to network programming education and real-world applicability. Each tool was chosen based on its strengths in demonstrating specific concepts, community support, documentation quality, and industry relevance.
-\begin{description}
-    \item[Go (Golang) 1.19+] Serves as the primary backend language, chosen for its exceptional concurrency model with goroutines and channels.
-    \item[TypeScript 5.0+] Used for frontend development, providing type safety and improved developer experience over JavaScript.
-    \item[Gin Framework] A high-performance HTTP web framework for building RESTful APIs in Go.
-    \item[Gorilla WebSocket] A battle-tested Go library for implementing WebSocket servers.
-    \item[gRPC-Go] The official Go implementation of gRPC for high-performance RPC.
-    \item[Next.js 14] A React framework for building server-side rendered and static web applications.
-    \item[React 18] A component-based UI library for building user interfaces.
-    \item[Tailwind CSS 3] A utility-first CSS framework for rapid UI development.
-    \item[SQLite3] An embedded relational database for simple, zero-configuration data storage.
-    \item[Git/GitHub] Distributed version control and collaboration platform.
-    \item[Visual Studio Code] The primary IDE with extensions for Go, ESLint, and Prettier.
-    \item[Docker] Containerization platform for packaging and deploying applications.
-\end{description}% --- Chapter 2 ---\chapter{Literature Review}
+\begin{itemize}
+    \item \textbf{Go (Golang) 1.19+}: Serves as the primary backend language, chosen for its exceptional concurrency model with goroutines and channels.
+    \item \textbf{TypeScript 5.0+}: Used for frontend development, providing type safety and improved developer experience over JavaScript.
+    \item \textbf{Gin Framework}: A high-performance HTTP web framework for building RESTful APIs in Go.
+    \item \textbf{Gorilla WebSocket}: A battle-tested Go library for implementing WebSocket servers.
+    \item \textbf{gRPC-Go}: The official Go implementation of gRPC for high-performance RPC.
+    \item \textbf{Next.js 14}: A React framework for building server-side rendered and static web applications.
+    \item \textbf{React 18}: A component-based UI library for building user interfaces.
+    \item \textbf{Tailwind CSS 3}: A utility-first CSS framework for rapid UI development.
+    \item \textbf{SQLite3}: An embedded relational database for simple, zero-configuration data storage.
+    \item \textbf{Git/GitHub}: Distributed version control and collaboration platform.
+    \item \textbf{Visual Studio Code}: The primary IDE with extensions for Go, ESLint, and Prettier.
+    \item \textbf{Docker}: Containerization platform for packaging and deploying applications.
+\end{itemize}% --- Chapter 2 ---\chapter{Literature Review}
 
 \section{Network Programming Fundamentals}
 Network programming forms the foundation of distributed systems, enabling communication between processes running on different machines across local or wide area networks. At its core, network programming involves creating applications that can send and receive data using various protocols and communication patterns.
