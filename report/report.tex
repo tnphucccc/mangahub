@@ -293,44 +293,194 @@ Security is a key consideration in the MangaHub project. The following measures 
 This chapter details the specific implementation of each of the five network protocol servers and the web frontend. The code is structured to be modular and maintainable, with each server running as a separate process.
 
 \section{HTTP REST API Server}
-The HTTP server is built using the Gin web framework and serves as the main entry point for most client interactions.
-\begin{itemize}
-    \item \textbf{Entry Point}: The server is started from \texttt{cmd/api-server/main.go}. This file is responsible for initializing the database connection, setting up the Gin router, defining routes, and starting the HTTP listener on port 8080.
-    \item \textbf{Routing and Middleware}: Routes are defined in a dedicated router function. They are grouped logically (e.g., \texttt{/auth}, \texttt{/manga}, \texttt{/users}). Middleware for JWT authentication, logging, and CORS is applied to the relevant route groups.
-    \item \textbf{Handlers}: Handler functions, located in the \texttt{internal/handlers} directory, are responsible for processing incoming HTTP requests. They parse request bodies and parameters, call the appropriate service-layer functions to perform business logic, and return JSON responses with correct HTTP status codes. The "Handler -> Service -> Repository" pattern is followed to separate concerns.
-\end{itemize}
+The HTTP server is built using the Gin web framework (v1.11.0) and serves as the main entry point for client interactions. It runs on port 8080 and handles all RESTful API operations for user authentication, manga catalog management, and library operations.
+
+\subsection{Server Configuration and Initialization}
+The server is started from \texttt{cmd/api-server/main.go}, which initializes the database connection, sets up routing with middleware, and starts both HTTP and WebSocket listeners. The implementation follows a three-layer architecture:
+
+\begin{lstlisting}[language=go, caption=HTTP Server Initialization, basicstyle=\ttfamily\footnotesize]
+func main() {
+    config := config.LoadConfig("./configs/dev.yaml")
+    db := database.InitDB(config.Database.Path)
+    jwtManager := auth.NewJWTManager(config.JWT.Secret, config.JWT.ExpiryDays)
+
+    router := gin.Default()
+    router.Use(middleware.CORSMiddleware())
+
+    setupRoutes(router, db, jwtManager)
+
+    server := &http.Server{
+        Addr:    ":" + config.Server.HTTPPort,
+        Handler: router,
+    }
+
+    log.Println("HTTP server listening on port", config.Server.HTTPPort)
+    server.ListenAndServe()
+}
+\end{lstlisting}
+
+\subsection{Route Organization}
+Routes are organized hierarchically with appropriate middleware applied at different levels. The API follows RESTful conventions with versioning (\texttt{/api/v1}):
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Endpoint} & \textbf{Method} & \textbf{Authentication} \\ \hline
+/api/v1/auth/register & POST & No \\ \hline
+/api/v1/auth/login & POST & No \\ \hline
+/api/v1/manga & GET & No \\ \hline
+/api/v1/manga/:id & GET & No \\ \hline
+/api/v1/users/library & GET & Required \\ \hline
+/api/v1/users/library & POST & Required \\ \hline
+/api/v1/users/progress/:manga\_id & GET & Required \\ \hline
+/api/v1/users/progress/:manga\_id & PUT & Required \\ \hline
+/api/v1/users/stats & GET & Required \\ \hline
+/health & GET & No \\ \hline
+\end{tabular}
+\caption{HTTP API Endpoints Summary}
+\label{tab:http-endpoints}
+\end{table}
+
+\subsection{Authentication Implementation}
+JWT-based authentication is implemented using the \texttt{golang-jwt/jwt/v4} library with HMAC-SHA256 signing. Passwords are hashed using bcrypt with a cost factor of 10:
+
+\begin{lstlisting}[language=go, caption=JWT Token Generation, basicstyle=\ttfamily\footnotesize]
+type JWTManager struct {
+    secretKey string
+    expiryDays int
+}
+
+func (j *JWTManager) GenerateToken(userID, username string) (string, error) {
+    claims := &Claims{
+        UserID:   userID,
+        Username: username,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(
+                time.Duration(j.expiryDays) * 24 * time.Hour)),
+            IssuedAt: jwt.NewNumericDate(time.Now()),
+        },
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString([]byte(j.secretKey))
+}
+\end{lstlisting}
+
+\subsection{Handler-Service-Repository Pattern}
+The implementation follows clean architecture principles with clear separation of concerns:
+
+\begin{lstlisting}[language=go, caption=Example: Search Manga Flow, basicstyle=\ttfamily\footnotesize]
+// Handler Layer (internal/manga/handler.go)
+func (h *Handler) SearchManga(c *gin.Context) {
+    query := models.MangaSearchQuery{
+        Title:  c.Query("title"),
+        Author: c.Query("author"),
+        Genre:  c.Query("genre"),
+        Status: c.Query("status"),
+    }
+
+    mangas, err := h.service.SearchManga(query)
+    if err != nil {
+        c.JSON(500, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(200, gin.H{"success": true, "data": mangas})
+}
+
+// Service Layer (internal/manga/service.go)
+func (s *Service) SearchManga(query models.MangaSearchQuery) ([]models.Manga, error) {
+    return s.repo.FindByQuery(query)
+}
+
+// Repository Layer (internal/manga/repository.go)
+func (r *Repository) FindByQuery(query models.MangaSearchQuery) ([]models.Manga, error) {
+    sqlQuery := "SELECT * FROM manga WHERE 1=1"
+    args := []interface{}{}
+
+    if query.Title != "" {
+        sqlQuery += " AND title LIKE ?"
+        args = append(args, "%"+query.Title+"%")
+    }
+
+    rows, err := r.db.Query(sqlQuery, args...)
+    // ... process rows and return results
+}
+\end{lstlisting}
 
 \section{TCP Synchronization Server}
-The TCP server provides real-time synchronization of a user's reading progress across multiple devices.
-\begin{itemize}
-    \item \textbf{Entry Point}: The server is launched from \texttt{cmd/tcp-server/main.go}, which starts a TCP listener on port 9090.
-    \item \textbf{Connection Handling}: The server runs an infinite loop that accepts new TCP connections. Each incoming connection is handled in its own goroutine to allow for concurrent processing of multiple clients.
-    \item \textbf{Messaging Protocol}: Upon connection, a client sends an authentication message (containing a JWT). The server maintains a map of authenticated connections. A simple JSON-based messaging protocol is used to send and receive progress updates. When a progress update is received from one client, the server broadcasts it to all other connected clients belonging to the same user.
-\end{itemize}
+The TCP server provides real-time synchronization of reading progress across multiple devices using persistent connections. It runs on port 9090 and implements a custom JSON-based messaging protocol over TCP.
+
+\subsection{Server Architecture}
+The server is launched from \texttt{cmd/tcp-server/main.go} and uses Go's \texttt{net} package for low-level TCP operations:
+
+\begin{lstlisting}[language=go, caption=TCP Server Structure, basicstyle=\ttfamily\footnotesize]
+type Server struct {
+    Port       string
+    listener   net.Listener
+    clients    map[string]*Client        // clientID -> Client
+    userIndex  map[string][]*Client      // userID -> []*Client
+    broadcast  chan models.TCPProgressBroadcast
+    jwtManager *auth.JWTManager
+    mu         sync.RWMutex
+    shutdown   chan struct{}
+}
+\end{lstlisting}
+
+\subsection{Connection Handling and Concurrency}
+The server accepts multiple concurrent connections, with each connection handled in a dedicated goroutine:
+
+\begin{lstlisting}[language=go, caption=TCP Server Main Loop, basicstyle=\ttfamily\footnotesize]
+func (s *Server) Start() error {
+    listener, err := net.Listen("tcp", s.Port)
+    s.listener = listener
+
+    go s.broadcastLoop()  // Start broadcast goroutine
+
+    for {
+        conn, err := listener.Accept()
+        go s.handleConnection(conn)  // Concurrent handling
+    }
+}
+\end{lstlisting}
+
+\subsection{JSON-Based Messaging Protocol}
+Messages are newline-delimited JSON with type fields:
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|p{7cm}|}
+\hline
+\textbf{Message Type} & \textbf{Description} \\ \hline
+auth & Client sends JWT token for authentication \\ \hline
+auth\_success / auth\_failed & Server authentication response \\ \hline
+ping / pong & Heartbeat mechanism \\ \hline
+progress & Client sends reading progress update \\ \hline
+broadcast & Server broadcasts progress to user's devices \\ \hline
+\end{tabular}
+\caption{TCP Protocol Message Types}
+\end{table}
 
 \begin{figure}[htbp]
     \centering
     \begin{tikzpicture}[node distance=1.5cm]
-        % Define styles for sequence diagram
         \tikzstyle{box} = [rectangle, draw, minimum width=2cm, minimum height=0.8cm]
 
-        % Actors
         \node (client1) [box, fill=green!20] {Client 1};
         \node (server) [box, fill=blue!20, right of=client1, xshift=3cm] {TCP Server};
         \node (client2) [box, fill=green!20, right of=server, xshift=3cm] {Client 2};
 
-        % Lifelines
         \draw [dashed] (client1) -- ++(0,-7);
         \draw [dashed] (server) -- ++(0,-7);
         \draw [dashed] (client2) -- ++(0,-7);
 
-        % Messages
         \draw [arrow] ([yshift=-1cm]client1.south) -- node[above] {1. Connect + Auth} ([yshift=-1cm]server.south);
         \draw [arrow] ([yshift=-2cm]server.south) -- node[above] {2. Auth OK} ([yshift=-2cm]client1.south);
-
         \draw [arrow] ([yshift=-3cm]client2.south) -- node[above] {3. Connect + Auth} ([yshift=-3cm]server.south);
         \draw [arrow] ([yshift=-4cm]server.south) -- node[above] {4. Auth OK} ([yshift=-4cm]client2.south);
-
         \draw [arrow] ([yshift=-5cm]client1.south) -- node[above] {5. Progress Update} ([yshift=-5cm]server.south);
         \draw [arrow] ([yshift=-6cm]server.south) -- node[above] {6. Broadcast Update} ([yshift=-6cm]client2.south);
     \end{tikzpicture}
@@ -339,26 +489,213 @@ The TCP server provides real-time synchronization of a user's reading progress a
 \end{figure}
 
 \section{UDP Notification Server}
-The UDP server is responsible for broadcasting chapter release notifications to clients.
-\begin{itemize}
-    \item \textbf{Entry Point}: Started via \texttt{cmd/udp-server/main.go}, this server creates a UDP listener on port 9091.
-    \item \textbf{Subscription and Broadcasting}: The server listens for incoming UDP datagrams. A client can send a "subscribe" message to register its address. The server maintains a list of these subscribed client addresses. When a new chapter is released (triggered by an internal event), the server constructs a notification message and sends it to all addresses in its subscription list using a "fire-and-forget" approach, which is characteristic of UDP.
-\end{itemize}
+The UDP server broadcasts chapter release notifications using a connectionless protocol. It runs on port 9091 and implements a registration-based notification system with automatic client cleanup.
+
+\subsection{Server Architecture and Client Management}
+Started from \texttt{cmd/udp-server/main.go}, the server maintains a registry of subscribed clients with automatic staleness detection:
+
+\begin{lstlisting}[language=go, caption=UDP Server Structure, basicstyle=\ttfamily\footnotesize]
+type Server struct {
+    Port       string
+    conn       *net.UDPConn
+    clients    map[string]*RegisteredClient
+    notify     chan models.UDPNotification
+    mu         sync.RWMutex
+    bufferSize int  // 2KB UDP receive buffer
+}
+
+type RegisteredClient struct {
+    ClientID     string
+    Address      *net.UDPAddr
+    LastPing     time.Time
+    RegisteredAt time.Time
+}
+\end{lstlisting}
+
+\subsection{Client Lifecycle}
+The server implements automatic client management:
+\begin{enumerate}
+    \item \textbf{Registration}: Clients send \texttt{register} messages
+    \item \textbf{Heartbeat}: Periodic \texttt{ping} messages (30s intervals)
+    \item \textbf{Cleanup}: Stale clients removed after 5 minutes of inactivity
+\end{enumerate}
+
+\subsection{Fire-and-Forget Broadcasting}
+Notifications are broadcast without acknowledgment, demonstrating UDP's best-effort delivery:
+
+\begin{lstlisting}[language=go, caption=UDP Notification Broadcast, basicstyle=\ttfamily\footnotesize]
+func (s *Server) BroadcastNotification(notif models.UDPNotification) {
+    data, _ := json.Marshal(notif)
+
+    s.mu.RLock()
+    clients := make([]*RegisteredClient, 0, len(s.clients))
+    for _, client := range s.clients {
+        clients = append(clients, client)
+    }
+    s.mu.RUnlock()
+
+    for _, client := range clients {
+        go func(addr *net.UDPAddr) {  // Non-blocking
+            s.conn.WriteToUDP(data, addr)  // Fire-and-forget
+        }(client.Address)
+    }
+}
+\end{lstlisting}
 
 \section{WebSocket Chat System}
-The real-time chat is powered by WebSockets, allowing for persistent, bidirectional communication.
-\begin{itemize}
-    \item \textbf{Connection Upgrade}: The initial connection is an HTTP request to an endpoint on the Gin API server (e.g., \texttt{/ws/chat/:room}). This handler uses the Gorilla WebSocket library to perform the "Upgrade" handshake, promoting the HTTP connection to a WebSocket connection.
-    \item \textbf{Hub and Clients}: The implementation follows the standard "Hub and Client" pattern. A central \texttt{Hub} object, running in its own goroutine, manages chat rooms, client registrations, and message broadcasting. Each connected \texttt{Client} is an object that wraps the WebSocket connection and has its own read/write goroutines to handle incoming and outgoing messages.
-    \item \textbf{Message Routing}: When a message is received from a client, it is sent to the hub. The hub then broadcasts the message to all other clients registered in the same chat room.
-\end{itemize}
+The WebSocket server enables real-time bidirectional communication for chat functionality. It runs on port 9093 and supports multiple chat rooms with user presence detection.
+
+\subsection{Hub-and-Client Architecture}
+The implementation follows the standard hub-and-client pattern recommended by Gorilla WebSocket:
+
+\begin{lstlisting}[language=go, caption=WebSocket Hub Structure, basicstyle=\ttfamily\footnotesize]
+type Hub struct {
+    rooms      map[string]map[*Client]bool  // room -> clients
+    Broadcast  chan models.WebSocketMessage
+    register   chan *Client
+    unregister chan *Client
+    mu         sync.RWMutex
+}
+
+type Client struct {
+    hub      *Hub
+    conn     *websocket.Conn
+    send     chan []byte
+    username string
+    room     string
+}
+\end{lstlisting}
+
+\subsection{Connection Upgrade Process}
+Connections begin as HTTP requests upgraded via WebSocket handshake:
+
+\begin{lstlisting}[language=go, caption=WebSocket Connection Upgrade, basicstyle=\ttfamily\footnotesize]
+var upgrader = websocket.Upgrader{
+    ReadBufferSize:  1024,
+    WriteBufferSize: 1024,
+    CheckOrigin: func(r *http.Request) bool {
+        return true  // Configure for production
+    },
+}
+
+func HandleWebSocket(hub *Hub) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+        if err != nil {
+            return
+        }
+
+        client := &Client{
+            hub:  hub,
+            conn: conn,
+            send: make(chan []byte, 256),
+        }
+
+        hub.register <- client
+        go client.writePump()
+        go client.readPump()
+    }
+}
+\end{lstlisting}
+
+\subsection{Message Broadcasting}
+The hub manages rooms and broadcasts messages to appropriate clients:
+
+\begin{lstlisting}[language=go, caption=Hub Message Routing, basicstyle=\ttfamily\footnotesize]
+func (h *Hub) Run() {
+    for {
+        select {
+        case client := <-h.register:
+            if h.rooms[client.room] == nil {
+                h.rooms[client.room] = make(map[*Client]bool)
+            }
+            h.rooms[client.room][client] = true
+
+        case message := <-h.Broadcast:
+            clients := h.rooms[message.Room]
+            data, _ := json.Marshal(message)
+            for client := range clients {
+                select {
+                case client.send <- data:
+                default:
+                    close(client.send)
+                    h.unregister <- client
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
 
 \section{gRPC Internal Service}
-The gRPC server facilitates high-performance, internal communication between the different backend services.
+The gRPC server provides high-performance RPC communication for internal service-to-service calls. It runs on port 9092 and uses Protocol Buffers for efficient binary serialization.
+
+\subsection{Protocol Buffer Definitions}
+The service contract is defined in \texttt{proto/manga.proto}:
+
+\begin{lstlisting}[language=protobuf, caption=gRPC Service Definition, basicstyle=\ttfamily\footnotesize]
+syntax = "proto3";
+package manga;
+
+service MangaService {
+    rpc GetManga(GetMangaRequest) returns (MangaResponse);
+    rpc SearchManga(SearchRequest) returns (SearchResponse);
+    rpc UpdateProgress(UpdateProgressRequest) returns (UpdateProgressResponse);
+}
+
+message GetMangaRequest {
+    string manga_id = 1;
+}
+
+message MangaResponse {
+    string id = 1;
+    string title = 2;
+    string author = 3;
+    repeated string genres = 4;
+    string status = 5;
+    int32 total_chapters = 6;
+}
+\end{lstlisting}
+
+\subsection{Server Implementation}
+The server implements the service interface and delegates to the service layer:
+
+\begin{lstlisting}[language=go, caption=gRPC Service Implementation, basicstyle=\ttfamily\footnotesize]
+type Server struct {
+    pb.UnimplementedMangaServiceServer
+    mangaService *manga.Service
+}
+
+func (s *Server) GetManga(ctx context.Context, req *pb.GetMangaRequest) (*pb.MangaResponse, error) {
+    manga, err := s.mangaService.GetByID(req.MangaId)
+    if err != nil {
+        return nil, status.Errorf(codes.NotFound, "manga not found")
+    }
+
+    return &pb.MangaResponse{
+        Id:            manga.ID,
+        Title:         manga.Title,
+        Author:        manga.Author,
+        Genres:        manga.Genres,
+        Status:        manga.Status,
+        TotalChapters: int32(manga.TotalChapters),
+    }, nil
+}
+\end{lstlisting}
+
+\subsection{Code Generation}
+Protocol Buffers are compiled to Go code using \texttt{protoc}:
+
+\begin{lstlisting}[language=bash, caption=gRPC Code Generation, basicstyle=\ttfamily\footnotesize]
+protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    proto/manga.proto
+\end{lstlisting}
+
+This generates:
 \begin{itemize}
-    \item \textbf{Protocol Definition}: The service contract is defined in a \texttt{.proto} file located in the \texttt{/proto} directory. This file specifies the available RPC methods (e.g., \texttt{GetUser}, \texttt{GetMangaDetails}) and the structure of request and response messages using Protocol Buffers.
-    \item \textbf{Code Generation}: The \texttt{protoc} compiler is used to automatically generate Go client and server code from the \texttt{.proto} file.
-    \item \textbf{Server Implementation}: The server is started from \texttt{cmd/grpc-server/main.go}. The implementation provides the logic for the methods defined in the proto file, often by calling the same service-layer functions used by the HTTP handlers. This allows other backend services to access data and business logic efficiently without the overhead of HTTP/JSON.
+    \item \texttt{manga.pb.go} - Message type definitions
+    \item \texttt{manga\_grpc.pb.go} - Service interface and client/server stubs
 \end{itemize}
 
 \section{Web Frontend Application}
@@ -407,25 +744,29 @@ The MangaHub project employs a comprehensive testing strategy based on the testi
 
 \begin{figure}[htbp]
     \centering
-    \begin{tikzpicture}
+    \begin{tikzpicture}[scale=1.2]
         % Draw pyramid layers
-        \fill[green!40] (0,0) -- (6,0) -- (5,2.5) -- (1,2.5) -- cycle;
-        \fill[blue!40] (1,2.5) -- (5,2.5) -- (4,4.5) -- (2,4.5) -- cycle;
-        \fill[red!40] (2,4.5) -- (4,4.5) -- (3,6) -- cycle;
+        \fill[green!40] (0,0) -- (6,0) -- (5,2) -- (1,2) -- cycle;
+        \fill[blue!40] (1,2) -- (5,2) -- (4,3.5) -- (2,3.5) -- cycle;
+        \fill[red!40] (2,3.5) -- (4,3.5) -- (3,4.8) -- cycle;
 
-        % Labels with percentages
-        \node[text width=4cm, align=center] at (3,1.2) {\Large \textbf{Unit Tests}\\70\% of tests\\Fast, Isolated};
-        \node[text width=4cm, align=center] at (3,3.5) {\large \textbf{Integration Tests}\\20\% of tests\\Component Interaction};
-        \node[text width=3cm, align=center] at (3,5.2) {\textbf{E2E Tests}\\10\% of tests\\Full System};
+        % Labels - auto-sized to prevent overflow
+        \node[align=center, font=\small] at (3,0.8) {\textbf{Unit Tests}\\70\% of tests\\Fast, Isolated};
+        \node[align=center, font=\small] at (3,2.6) {\textbf{Integration Tests}\\20\% of tests\\Component Interaction};
+        \node[align=center, font=\footnotesize] at (3,4.1) {\textbf{E2E Tests}\\10\% of tests\\Full System};
 
         % Borders
-        \draw[thick] (0,0) -- (6,0) -- (5,2.5) -- (1,2.5) -- cycle;
-        \draw[thick] (1,2.5) -- (5,2.5) -- (4,4.5) -- (2,4.5) -- cycle;
-        \draw[thick] (2,4.5) -- (4,4.5) -- (3,6) -- cycle;
+        \draw[thick] (0,0) -- (6,0) -- (5,2) -- (1,2) -- cycle;
+        \draw[thick] (1,2) -- (5,2) -- (4,3.5) -- (2,3.5) -- cycle;
+        \draw[thick] (2,3.5) -- (4,3.5) -- (3,4.8) -- cycle;
 
-        % Coverage indicator
-        \node[text width=3cm, align=right] at (-0.5,1.2) {High Coverage\\Fast Execution};
-        \node[text width=3cm, align=right] at (-0.5,5.2) {Complete Flow\\Slow Execution};
+        % Coverage indicators - repositioned for better alignment
+        \node[text width=3cm, align=right, font=\footnotesize] at (-0.8,1) {High Coverage\\Fast Execution};
+        \node[text width=3cm, align=right, font=\footnotesize] at (-0.8,4.2) {Complete Flow\\Slower Execution};
+
+        % Optional: Add arrows to connect indicators to pyramid
+        \draw[->, dashed, gray] (-0.4,1) -- (0.2,1);
+        \draw[->, dashed, gray] (-0.4,4.2) -- (2.2,4.2);
     \end{tikzpicture}
     \caption{Testing Pyramid Strategy}
     \label{fig:testing-pyramid}
